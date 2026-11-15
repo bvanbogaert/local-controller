@@ -43,6 +43,34 @@ L'outil signale, sans s'arrêter :
 
 Si Chromium n'est pas dans le `PATH`, son chemin est donné par la variable d'environnement `CHROMIUM`.
 
+## Export du schéma de la base RESASAT
+
+L'outil en python *tools/export-oracle-db.py* extrait le schéma de la base de données Oracle de RESASAT. Seules les tables dont le nom commence par `resasat_` sont exportées. L'option *--format* choisit la sortie :
+* *markdown* : un fichier *.md* par table dans *build/doc/resasat-db/*, plus *index.md* qui liste les tables et les séquences. Chaque fichier décrit les colonnes, les clés, les contraintes, les index et les déclencheurs ; les clés étrangères renvoient vers le fichier de la table référencée.
+* *sql* : un fichier *.sql* par table dans *build/sql/resasat-db/*, en DDL natif Oracle 19c produit par `DBMS_METADATA`, plus *_sequences.sql* pour les séquences. Chaque fichier contient la table, ses index, ses clés étrangères, ses déclencheurs et ses commentaires.
+
+### Prérequis
+
+L'outil n'utilise que la bibliothèque standard de Python 3.11 et interroge la base avec `sqlplus`, cherché dans `$ORACLE_HOME/bin` (par défaut */opt/oracle/product/19c/dbhome_1*).
+
+Le mot de passe Oracle est lu dans la variable d'environnement `RESASAT_PASSWORD` ; si elle est absente, il est demandé au clavier.
+
+### Utilisation
+
+```
+tools/export-oracle-db.py --format markdown
+tools/export-oracle-db.py --format sql
+```
+
+Options :
+* *--output RÉPERTOIRE* : autre répertoire de sortie.
+* *--user* et *--dsn* : autre compte ou autre base (par défaut `resaora` et `resasat-rhel96:1521/PDB1`).
+* *--with-storage* : en format *sql*, conserve les tablespaces et les attributs de stockage, retirés par défaut.
+
+À chaque exécution, les fichiers du même format qui ne correspondent plus à une table sont supprimés du répertoire de sortie.
+
+En format *sql*, les clés étrangères sont dans le fichier de leur table : l'ordre de chargement des fichiers compte. L'en-tête de chaque fichier liste les tables à créer avant.
+
 ### Tests
 
 Les tests lancent l'outil sur les documents d'essai de *tests/tools/fixtures/* et sur la documentation du dépôt, puis relisent le texte des PDF produits. Ils demandent en plus le paquet *poppler-utils* (`pdftotext`, `pdfinfo`, `pdftohtml`).
