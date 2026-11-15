@@ -4,6 +4,36 @@
 
 Application destinée initialement pour simuler la version 2 des contrôleurs locaux, notamment le protocole INTERFACE_CONTROLLERV2 tel que décrit dans l'offre du 13/11/2026 faite à France Télévisions.
 
+RESASAT est une application WEB écrite en PHP 8 + Oracle 19c. Elle est installée dans centre administratif de France Télévisions dans le 15ième arrondissement à Paris. Les contrôleurs locaux sont installés dans les centres régionaux répartis partout en France Métropolitaine et en Corse. RESASAT et les contrôleurs locaux communiquent à travers un réseau IP privé.
+
+```mermaid
+flowchart LR
+    subgraph ADMIN["Centre administratif (Paris)"]
+        RESASAT["RESASAT"]
+    end
+
+    NETWORK(["Réseau IP privé"])
+
+    subgraph CENTER1["Centre régional d'Amiens"]
+        CONTROLLER1["Contrôleur local"]
+    end
+    subgraph CENTER2["Centre régional d'Orléans"]
+        CONTROLLER2["Contrôleur local"]
+    end
+    MORE["• • •"]
+    subgraph CENTER3["Centre régional de Bastia"]
+        CONTROLLER3["Contrôleur local"]
+    end
+
+    RESASAT <--> NETWORK
+    NETWORK <--> CONTROLLER1
+    NETWORK <--> CONTROLLER2
+    NETWORK -.- MORE
+    NETWORK <--> CONTROLLER3
+
+    style MORE fill:none,stroke:none
+```
+
 ## La plateforme de développement et la plateforme cible
 
 RedHat 9.6 afin de pouvoir faire tourner le simulateur sur la plateforme de développement de RESASAT. 
