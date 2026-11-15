@@ -1,6 +1,6 @@
 # Fabrication
 
-To be completed
+À compléter.
 
 ## Export en PDF
 

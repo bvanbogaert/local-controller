@@ -27,7 +27,9 @@ Voir ERP
 
 Puissance isotrope rayonnée équivalente.
 Elle est référencée à une antenne isotrope.
-$ \text{PIRE} = \text{PAR} + 2{,}15\text{ dB} $
+$$
+\text{PIRE} = \text{PAR} + 2{,}15\text{ dB}
+$$
 
 Voir EIRP
 

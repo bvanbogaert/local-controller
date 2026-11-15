@@ -10,7 +10,16 @@ Il contient aussi le lot 1 de la même offre:
 
 # La plateforme de développement et la plateforme cible
 
-Voir *README.md*
+RedHat 9.6. 
+
+Frontend:
+* TypeScript
+* React
+
+Backend:
+* Python 3.11
+* FastAPI
+* Database: DuckDB
 
 # Langue
 
@@ -55,8 +64,8 @@ La liste exhaustive de la documentation, notamment le contenu de *README.d/*, do
 * En une phrase, la description de son contenu
 
 Les fichiers suivant ne sont pas destinés à être livrés:
-* TODO.md: à faire, mais pas maintenant
-* DONE.md; garder trace des entrées retirées de TODO.md
+* TODO.md: à faire, mais pas maintenant. Maintenu par le développeur.
+* DONE.md: garder trace des entrées retirées de TODO.md. Maintenu par le développeur.
 
 # Maintenir la documentation
 
