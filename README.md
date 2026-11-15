@@ -9,7 +9,7 @@ Application destinée initialement pour simuler la version 2 des contrôleurs lo
 RedHat 9.6 afin de pouvoir faire tourner le simulateur sur la plateforme de développement de RESASAT. 
 
 Frontend:
-* Type script
+* Typescript
 * React
 * Database: DuckDB (avec provision pour éventuellement supporter MariaDB et Oracle 19c les deux DB historiques de RESASAT)
 
@@ -24,10 +24,10 @@ export ORACLE_HOME=/opt/oracle/product/19c/dbhome_1; /opt/oracle/product/19c/dbh
 
 Provision pour options à venir, mais sans compromettre la livraison du prototype:
 
-* A terme, elle pourrait devenir l'application locale, voire un module du future RESASAT.
+* A terme, elle pourrait devenir l'application locale, voire un module d'une prochaine version de RESASAT.
 * Support de plusieurs bases de données en plus de DuckDB: MariaDB, Oracle 19c ou plus récent.
 
-## Links
+## Liens
 
 * [build](README.d/build.md), "Fabrication", décrit l'installation de l'environnement de développement et la procédure de fabrication.
 * [glossary](README.d/glossary.md), "Glossaire", définit et clarifie les termes techniques.

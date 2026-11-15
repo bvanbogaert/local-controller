@@ -1,6 +1,6 @@
 # Objectif
 
-L'application est un simulateur du contrôleur local. Les provisions pour en faire le contrôleur réel (voire un composant du future RESASAT) sont bienvenues si, et seulement si, elles ne compliquent ni ne retardent le simulateur. En cas de doute, demander.
+L'application est un simulateur du contrôleur local. Les provisions pour en faire le contrôleur réel (voire un composant d'une prochaine version de RESASAT) sont bienvenues si, et seulement si, elles ne compliquent ni ne retardent le simulateur. En cas de doute, demander.
 
 Ce projet correspond au Lot 3 de l'offre:
 /home/apache/GitProjects/docs-resasat/offre-interface-controleur.md
@@ -16,7 +16,7 @@ Voir *README.md*
 
 La documentation, les commentaires dans le code et les interfaces graphiques sont en Français.
 
-Pour le code lui-même, les identificateurs doivent être en anglais. Pour les termes techniques, la traduction anglais --> Français doit être maintenue dans un tableau dans *README.d/translation.md*. Exemple: la traduction EIRP vvers PIRE se trouve dans le tableau de traduction. Dans *README.d/glossary.md* on retrouve la définition de EIRP et PIRE et, optionellement, une référence entre les deux.
+Pour le code lui-même, les identificateurs doivent être en anglais. Pour les termes techniques, la traduction anglais --> Français doit être maintenue dans un tableau dans *README.d/translation.md*. Exemple: la traduction EIRP vers PIRE se trouve dans le tableau de traduction. Dans *README.d/glossary.md* on retrouve la définition de EIRP et PIRE et, optionnellement, une référence entre les deux.
 
 # Gestion de configuration (`versionning`)
 
@@ -30,12 +30,12 @@ Markdown pour le texte.
 
 Pour les schémas
 * mermaid, par défaut
-* drawio
+* drawio.svg
 
 Pour les formules
 * LaTeX
   * $…$ en ligne dans le texte
-  * $$…$$ en bloc entre deux paragraphe
+  * $$…$$ en bloc entre deux paragraphes
 
 # Convention en Markdown
 
@@ -60,4 +60,4 @@ Les fichiers suivant ne sont pas destinés à être livrés:
 
 # Maintenir la documentation
 
-Si le changement modifie le fonctionnel, le modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'atend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification de la documentation. En cas de doute, demande.
+Si le changement modifie le fonctionnel, la modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'attend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification de la documentation. En cas de doute, demande.
