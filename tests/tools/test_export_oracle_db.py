@@ -4,7 +4,8 @@
 Deux familles :
 
 * sans base : l'analyse de la sortie de sqlplus et la production des fichiers,
-  à partir d'une sortie d'essai écrite dans ce fichier ;
+  à partir d'une sortie d'essai écrite dans ce fichier, et la lecture du fichier
+  langue de kadlib de fixtures/kadlib/ (sautée si php est absent) ;
 * avec la base RESASAT : l'outil est lancé comme le ferait un utilisateur. Ces
   tests sont sautés si la variable RESASAT_PASSWORD ou sqlplus sont absents.
 
@@ -16,6 +17,7 @@ Lancement, depuis la racine du dépôt :
 import importlib.util
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -24,6 +26,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 TOOL = ROOT / "tools" / "export-oracle-db.py"
+LANGUAGE_FILE = (Path(__file__).resolve().parent / "fixtures" / "kadlib" / "addons" / "Essai"
+                 / "lang" / "fr.inc.php")
 
 
 def load_tool():
@@ -380,6 +384,16 @@ class CommandLineTest(unittest.TestCase):
 @unittest.skipIf(NO_DATABASE, "base RESASAT non disponible : " + ", ".join(NO_DATABASE))
 class DatabaseTest(unittest.TestCase):
 
+    @unittest.skipUnless(shutil.which("php"), "php absent")
+    def test_markdown_with_language_file(self):
+        result = self.export("--format", "markdown", "--lang", str(LANGUAGE_FILE))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("CHANNEL_UNKNOWN", result.stderr)  # avertissement, sans arrêt
+        index = (self.output / "index.md").read_text(encoding="utf-8")
+        self.assertIn("fichier langue `fr.inc.php`", index)
+        self.assertIn("| [resasat_channel](resasat_channel.md) |", index)
+        self.assertIn("**Slot**", index)
+
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory(prefix="test-export-oracle-db-")
         self.addCleanup(self._tmp.cleanup)
@@ -462,6 +476,160 @@ class DatabaseTest(unittest.TestCase):
         self.assertNotIn("mot-de-passe-errone", result.stderr)
         self.assertLessEqual(len(result.stderr.splitlines()), 6)
         self.assertEqual([p.name for p in self.output.iterdir()], ["resasat_existing.sql"])
+
+
+class LanguageTest(unittest.TestCase):
+    """Enrichissement du Markdown, avec un fichier langue déjà lu."""
+
+    def setUp(self):
+        self.schema = tool.Schema(tool.split_sections(SAMPLE_OUTPUT))
+        self.language = tool.Language(
+            labels={"resasat_channel": "Slot", "resasat_stations": "Stations <b>fixes</b>",
+                    "resasat_channel_id": "Index", "resasat_channel_name": "Nom abr&eacute;g&eacute;",
+                    "resasat_channel_station_fk": "Station",
+                    "resasat_channel_owner_fk": "Utilisateur",
+                    "resasat_station_id": "&Eacute;tat | validation"},
+            masks={"resasat_channel_id": ["AUTO"],
+                   "resasat_channel_name": ["TEXT", "maxlength=15 size=15"],
+                   "resasat_channel_station_fk": ["FKORNULL", "resasat_station",
+                                                  "resasat_station_id", "resasat_station_name"],
+                   "resasat_channel_owner_fk": ["FK", "users", "ID", "loginname"],
+                   "resasat_station_id": ["ENUM", [["0", "Nouveau"], ["1", "Accept&eacute;"],
+                                                   ["H", "Horizontale (X)"]]],
+                   "resasat_station_start": ["ENUMORNULL",
+                                             [[str(n), f"Valeur {n}"] for n in range(1, 12)]]})
+        self.files = tool.render_markdown(self.schema, "resaora@essai", self.language, "fr.inc.php")
+
+    def test_labels_are_plain_text(self):
+        self.assertEqual(self.language.label("RESASAT_CHANNEL_NAME"), "Nom abrégé")
+        self.assertEqual(self.language.label("resasat_unknown"), "")
+        self.assertEqual(self.language.table_label("RESASAT_CHANNEL"), "Slot")
+        # À défaut du nom de la table, son pluriel
+        self.assertEqual(self.language.table_label("RESASAT_STATION"), "Stations fixes")
+
+    def test_masks(self):
+        self.assertEqual(self.language.enum_values("RESASAT_STATION_ID"),
+                         [("0", "Nouveau"), ("1", "Accepté"), ("H", "Horizontale (X)")])
+        self.assertIsNone(self.language.enum_values("RESASAT_CHANNEL_NAME"))
+        self.assertEqual(self.language.foreign_key("RESASAT_CHANNEL_STATION_FK"),
+                         ("resasat_station", "resasat_station_id"))
+        self.assertIsNone(self.language.foreign_key("RESASAT_STATION_ID"))
+
+    def test_table_name(self):
+        self.assertTrue(self.files["resasat_channel.md"].startswith(
+            "# resasat_channel\n\nNom présenté aux utilisateurs : **Slot**\n\n"
+            "Canaux | satellite\n"))
+        self.assertIn("Nom présenté aux utilisateurs : **Stations fixes**",
+                      self.files["resasat_station.md"])
+
+    def test_column_comments(self):
+        page = self.files["resasat_channel.md"]
+        # Nom présenté aux utilisateurs, puis commentaire de la base
+        self.assertIn("| non |  | **Index** — Identifiant sur deux lignes |", page)
+        self.assertIn("| `'sans nom'` | **Nom abrégé** — L'intitulé |", page)
+        # Clé étrangère vers une table exportée : lien ; vers une autre table : texte
+        self.assertIn("| **Station** — Clé étrangère vers `resasat_station_id` de "
+                      "[resasat_station](resasat_station.md) |", page)
+        self.assertIn("| **Utilisateur** — Clé étrangère vers `id` de users |", page)
+
+    def test_short_enum_in_comment(self):
+        page = self.files["resasat_station.md"]
+        self.assertIn("| **État \\| validation** — Valeurs : `0` = Nouveau, `1` = Accepté, "
+                      "`H` = Horizontale (X) |", page)
+        self.assertNotIn("## Valeurs de resasat_station_id", page)
+
+    def test_long_enum_in_section(self):
+        page = self.files["resasat_station.md"]
+        self.assertIn("| Valeurs : voir « Valeurs de resasat_station_start » |", page)
+        self.assertIn("## Valeurs de resasat_station_start\n\n| Valeur | Signification |", page)
+        self.assertIn("| `11` | Valeur 11 |", page)
+        # La section suit le tableau des colonnes
+        self.assertLess(page.index("## Valeurs de"), page.index("## Clé primaire"))
+        self.assertEqual(len(re.findall(r"^# ", page, re.MULTILINE)), 1)
+
+    def test_index(self):
+        index = self.files["index.md"]
+        self.assertIn("fichier langue `fr.inc.php`", index)
+        self.assertIn("| [resasat_channel](resasat_channel.md) | 4 | "
+                      "**Slot** — Canaux \\| satellite |", index)
+        self.assertIn("| [resasat_station](resasat_station.md) | 2 | **Stations fixes** |", index)
+
+    def test_without_language_file_nothing_changes(self):
+        plain = tool.render_markdown(self.schema, "resaora@essai")
+        empty = tool.render_markdown(self.schema, "resaora@essai", tool.Language({}, {}))
+        for name, content in plain.items():
+            with self.subTest(file=name):
+                self.assertNotIn("**", content)
+                self.assertNotIn("fichier langue", content)
+                if name != "index.md":
+                    self.assertEqual(content, empty[name])
+
+
+@unittest.skipUnless(shutil.which("php"), "php absent")
+class LanguageFileTest(unittest.TestCase):
+    """Lecture par PHP du fichier langue de fixtures/kadlib/."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.language = tool.Language.load(LANGUAGE_FILE)
+
+    def test_labels(self):
+        self.assertEqual(self.language.label("resasat_channel"), "Slot")
+        self.assertEqual(self.language.label("resasat_channel_name"), "Nom abrégé")
+        self.assertEqual(self.language.table_label("RESASAT_STATION"), "Stations fixes")
+        # Les variables internes du chargeur ne sortent pas
+        self.assertFalse([name for name in self.language.labels if name.startswith("_")])
+
+    def test_constants_and_variables_are_evaluated(self):
+        # $snl vient de defines.inc.php, KADLIB_WHERE_CLAUSE de kadlib-defines.inc.php
+        self.assertEqual(self.language.masks["resasat_channel_name"],
+                         ["TEXT", "maxlength=15 size=15"])
+        self.assertEqual(self.language.masks["resasat_channel_station_fk"],
+                         ["FKORNULL", "resasat_station", "resasat_station_id",
+                          "resasat_station_name"])
+        self.assertEqual(self.language.foreign_key("RESASAT_CHANNEL_OWNER_FK"), ("users", "ID"))
+
+    def test_enum_keys(self):
+        # Constantes connues remplacées par leur valeur, constante inconnue gardée par son nom
+        self.assertEqual(self.language.enum_values("RESASAT_STATION_ID"),
+                         [("0", "Nouveau"), ("1", "Accepté"), ("CHANNEL_UNKNOWN", "Inconnu"),
+                          ("H", "Horizontale (X)")])
+        self.assertEqual(self.language.unknown_constants, ["CHANNEL_UNKNOWN"])
+        self.assertEqual(len(self.language.enum_values("RESASAT_STATION_START")), 11)
+
+    def test_missing_file(self):
+        with self.assertRaises(tool.ExportError):
+            tool.Language.load(LANGUAGE_FILE.with_name("absent.inc.php"))
+
+    def test_php_error(self):
+        with tempfile.TemporaryDirectory(prefix="test-export-oracle-db-") as tmp:
+            broken = Path(tmp) / "app" / "lang" / "fr.inc.php"
+            broken.parent.mkdir(parents=True)
+            broken.write_text('<?php\n$resasat_x = undefined_function();\n')
+            with self.assertRaises(tool.ExportError) as context:
+                tool.Language.load(broken)
+            self.assertIn("undefined_function", str(context.exception))
+
+
+class LanguageCommandLineTest(unittest.TestCase):
+
+    def test_lang_is_for_markdown_only(self):
+        result = subprocess.run([str(TOOL), "--format", "sql", "--lang", str(LANGUAGE_FILE)],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--lang", result.stderr)
+
+    def test_missing_language_file_stops_before_the_database(self):
+        with tempfile.TemporaryDirectory(prefix="test-export-oracle-db-") as tmp:
+            # ORACLE_HOME vide : une tentative de connexion donnerait une autre erreur
+            env = dict(os.environ, ORACLE_HOME=tmp, RESASAT_PASSWORD="sans-objet")
+            result = subprocess.run(
+                [str(TOOL), "--format", "markdown", "--lang", str(Path(tmp) / "absent.php"),
+                 "--output", str(Path(tmp) / "out")],
+                capture_output=True, text=True, timeout=30, env=env)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("fichier langue introuvable", result.stderr)
+            self.assertFalse((Path(tmp) / "out").exists())
 
 
 if __name__ == "__main__":

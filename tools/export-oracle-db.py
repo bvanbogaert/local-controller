@@ -8,6 +8,10 @@ des deux formats :
 * sql      : un fichier .sql par table (DDL Oracle 19c produit par DBMS_METADATA),
              plus _sequences.sql, dans build/sql/resasat-db/.
 
+En format markdown, l'option --lang enrichit les commentaires avec le fichier
+langue de kadlib (noms présentés aux utilisateurs, valeurs des énumérations,
+clés étrangères). Le fichier est évalué par PHP.
+
 La base est interrogée avec sqlplus : seule la bibliothèque standard de Python
 est utilisée. Voir README.d/build.md pour les prérequis et l'utilisation.
 """
@@ -16,9 +20,12 @@ import argparse
 import csv
 import datetime
 import getpass
+import html
 import io
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -144,6 +151,76 @@ SELECT '{DDL_MARK}SEQUENCE - ' || sequence_name || CHR(10)
   FROM user_sequences
  WHERE {SEQUENCE_FILTER}
  ORDER BY sequence_name;
+"""
+
+# Au-delà de ce nombre de valeurs, une énumération quitte la cellule du tableau
+# des colonnes pour une section à part.
+ENUM_INLINE_MAX = 10
+
+# Chargeur PHP du fichier langue de kadlib. Le fichier est du code PHP qui
+# utilise les constantes de l'application : il est évalué plutôt qu'analysé.
+# Les fichiers *defines.inc.php de l'application et des modules voisins sont
+# chargés avant lui ; une constante encore inconnue prend son nom pour valeur.
+# Sortie en JSON : les variables chaîne (libellés) et, pour chaque variable
+# « <colonne>_mask », ses quatre premiers éléments.
+PHP_LANGUAGE_LOADER = r"""
+error_reporting(E_ERROR);
+ini_set('display_errors', '0');
+$__lang = realpath($argv[1]);
+if ($__lang === false) { fwrite(STDERR, "fichier introuvable\n"); exit(1); }
+$__app = dirname($__lang, 2);
+chdir($__app);
+ob_start();
+foreach (array_unique(array_merge(glob($__app . '/*defines.inc.php'),
+                                  glob(dirname($__app) . '/*/*defines.inc.php'))) as $__file) {
+    include_once $__file;
+}
+$__unknown = [];
+while (true) {
+    try {
+        include $__lang;
+        break;
+    } catch (Error $__error) {
+        if (count($__unknown) < 1000
+            && preg_match('/^Undefined constant "([^"]+)"/', $__error->getMessage(), $__match)) {
+            define($__match[1], $__match[1]);
+            $__unknown[] = $__match[1];
+            continue;
+        }
+        ob_end_clean();
+        fwrite(STDERR, $__error->getMessage() . "\n");
+        exit(1);
+    }
+}
+ob_end_clean();
+$__labels = [];
+$__masks = [];
+foreach (get_defined_vars() as $__name => $__value) {
+    if (str_starts_with($__name, '_') || $__name === 'argv' || $__name === 'argc' || $__name === 'GLOBALS') {
+        continue;
+    }
+    if (is_string($__value)) {
+        $__labels[$__name] = $__value;
+    } elseif (is_array($__value) && str_ends_with($__name, '_mask')) {
+        $__mask = [];
+        for ($__i = 0; $__i < 4 && array_key_exists($__i, $__value); $__i++) {
+            $__item = $__value[$__i];
+            if (is_array($__item)) {
+                $__pairs = [];
+                foreach ($__item as $__key => $__text) {
+                    $__pairs[] = [(string)$__key, is_scalar($__text) ? (string)$__text : ''];
+                }
+                $__item = $__pairs;
+            } elseif (!is_scalar($__item)) {
+                $__item = null;
+            }
+            $__mask[] = $__item;
+        }
+        $__masks[substr($__name, 0, -5)] = $__mask;
+    }
+}
+echo json_encode(['labels' => $__labels, 'masks' => $__masks, 'unknown_constants' => $__unknown],
+                 JSON_INVALID_UTF8_SUBSTITUTE);
 """
 
 NOT_NULL_CHECK = re.compile(r'^"[^"]+" IS NOT NULL$')
@@ -345,6 +422,77 @@ class Schema:
 
 
 # --------------------------------------------------------------------------
+# Fichier langue de kadlib
+# --------------------------------------------------------------------------
+
+def plain_label(text):
+    """Libellé sans HTML : entités décodées, balises retirées."""
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text)).split())
+
+
+class Language:
+    """Libellés et masques du fichier langue, indexés par nom en minuscules.
+
+    Un libellé est le nom présenté aux utilisateurs d'une table ou d'une
+    colonne. Un masque décrit la nature d'une colonne, par exemple
+    ["ENUM", [[valeur, signification], ...]] ou ["FK", table, colonne, colonne affichée].
+    """
+
+    ENUM_KINDS = ("ENUM", "ENUMORNULL")
+    FOREIGN_KEY_KINDS = ("FK", "FKORNULL", "FKNOLIST")
+
+    def __init__(self, labels, masks, unknown_constants=()):
+        self.labels = {name.lower(): plain_label(text) for name, text in labels.items()}
+        self.masks = {name.lower(): mask for name, mask in masks.items() if mask}
+        self.unknown_constants = list(unknown_constants)
+
+    @classmethod
+    def load(cls, path):
+        """Évalue le fichier langue avec PHP."""
+        if not path.is_file():
+            raise ExportError(f"fichier langue introuvable : {path}")
+        php = shutil.which("php")
+        if not php:
+            raise ExportError("php introuvable : il est nécessaire à l'option --lang")
+        try:
+            result = subprocess.run([php, "-r", PHP_LANGUAGE_LOADER, "--", str(path)],
+                                    capture_output=True, timeout=TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            raise ExportError(f"php ne répond pas après {TIMEOUT_S} s") from None
+        if result.returncode != 0:
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            raise ExportError(f"lecture du fichier langue {path} impossible :\n{detail}")
+        try:
+            data = json.loads(result.stdout.decode("utf-8", errors="replace"))
+        except json.JSONDecodeError:
+            raise ExportError(f"réponse de php illisible pour {path}") from None
+        # PHP rend [] et non {} pour un tableau vide
+        return cls(data["labels"] or {}, data["masks"] or {}, data["unknown_constants"])
+
+    def label(self, name):
+        return self.labels.get(name.lower(), "")
+
+    def table_label(self, table):
+        """Nom d'une table ; à défaut, le fichier langue n'a souvent que son pluriel."""
+        return self.label(table) or self.label(table + "s")
+
+    def enum_values(self, column):
+        """Liste (valeur, signification) d'une colonne énumérée, sinon None."""
+        mask = self.masks.get(column.lower())
+        if mask and mask[0] in self.ENUM_KINDS and len(mask) > 1 and isinstance(mask[1], list):
+            return [(value, plain_label(text)) for value, text in mask[1]]
+        return None
+
+    def foreign_key(self, column):
+        """Couple (table, colonne) visé par une colonne clé étrangère, sinon None."""
+        mask = self.masks.get(column.lower())
+        if (mask and mask[0] in self.FOREIGN_KEY_KINDS and len(mask) > 2
+                and isinstance(mask[1], str) and isinstance(mask[2], str)):
+            return mask[1], mask[2]
+        return None
+
+
+# --------------------------------------------------------------------------
 # Format Markdown
 # --------------------------------------------------------------------------
 
@@ -390,9 +538,43 @@ def yes_no(value):
     return "oui" if value else "non"
 
 
-def render_markdown_table(schema, table):
+def find_table(schema, name):
+    """Nom dans le schéma d'une table citée par le fichier langue, sinon le nom cité."""
+    return next((table for table in schema.tables if table.lower() == name.lower()), name)
+
+
+def enum_title(column):
+    return f"Valeurs de {label(column)}"
+
+
+def column_comment(schema, language, column):
+    """Cellule « Commentaire » : nom présenté aux utilisateurs, valeurs de
+    l'énumération, cible de la clé étrangère, puis commentaire de la base."""
+    parts = []
+    if language:
+        name = column["name"]
+        if language.label(name):
+            parts.append(f"**{cell(language.label(name))}**")
+        values = language.enum_values(name)
+        if values and len(values) > ENUM_INLINE_MAX:
+            parts.append(f"Valeurs : voir « {enum_title(name)} »")
+        elif values:
+            parts.append("Valeurs : " + ", ".join(f"{code(value)} = {cell(text)}"
+                                                  for value, text in values))
+        target = language.foreign_key(name)
+        if target:
+            parts.append(f"Clé étrangère vers {code(label(target[1]))} de "
+                         f"{table_link(schema, find_table(schema, target[0]))}")
+    if column["comment"]:
+        parts.append(cell(column["comment"]))
+    return " — ".join(parts)
+
+
+def render_markdown_table(schema, table, language=None):
     info = schema.tables[table]
     parts = [f"# {label(table)}"]
+    if language and language.table_label(table):
+        parts.append(f"Nom présenté aux utilisateurs : **{language.table_label(table)}**")
     if info["comment"]:
         parts.append(info["comment"])
 
@@ -400,8 +582,17 @@ def render_markdown_table(schema, table):
     parts.append(markdown_table(
         ["N°", "Colonne", "Type", "Nul autorisé", "Valeur par défaut", "Commentaire"],
         [[str(position), code(label(column["name"])), code(column["type"]),
-          yes_no(column["nullable"]), code(column["default"]), cell(column["comment"])]
+          yes_no(column["nullable"]), code(column["default"]),
+          column_comment(schema, language, column)]
          for position, column in enumerate(info["columns"], start=1)]))
+
+    # Énumérations trop longues pour la cellule du tableau des colonnes
+    for column in info["columns"]:
+        values = language.enum_values(column["name"]) if language else None
+        if values and len(values) > ENUM_INLINE_MAX:
+            parts.append(f"## {enum_title(column['name'])}")
+            parts.append(markdown_table(["Valeur", "Signification"],
+                                        [[code(value), cell(text)] for value, text in values]))
 
     for primary in schema.constraints_of(table, "P"):
         parts.append("## Clé primaire")
@@ -466,15 +657,32 @@ def render_markdown_table(schema, table):
     return "\n\n".join(parts) + "\n"
 
 
-def render_markdown_index(schema, origin):
+def table_comment(language, table, info):
+    """Cellule « Commentaire » de l'index : nom présenté aux utilisateurs, puis
+    commentaire de la base."""
+    parts = []
+    if language and language.table_label(table):
+        parts.append(f"**{cell(language.table_label(table))}**")
+    if info["comment"]:
+        parts.append(cell(info["comment"]))
+    return " — ".join(parts)
+
+
+def render_markdown_index(schema, origin, language=None, language_file=None):
+    introduction = (f"Schéma extrait de `{origin}` le {datetime.date.today().isoformat()} "
+                    "par *tools/export-oracle-db.py*. Seules les tables dont le nom commence "
+                    "par `resasat_` sont décrites.")
+    if language:
+        introduction += (" Les noms présentés aux utilisateurs (en gras), les valeurs des "
+                         "énumérations et les clés étrangères des commentaires viennent du "
+                         f"fichier langue `{language_file}`.")
     parts = ["# Schéma de la base de données RESASAT",
-             f"Schéma extrait de `{origin}` le {datetime.date.today().isoformat()} "
-             "par *tools/export-oracle-db.py*. Seules les tables dont le nom commence "
-             "par `resasat_` sont décrites.",
+             introduction,
              "## Tables",
              markdown_table(
                  ["Table", "Colonnes", "Commentaire"],
-                 [[table_link(schema, table), str(len(info["columns"])), cell(info["comment"])]
+                 [[table_link(schema, table), str(len(info["columns"])),
+                   table_comment(language, table, info)]
                   for table, info in schema.tables.items()])]
     if schema.sequences:
         parts.append("## Séquences")
@@ -486,10 +694,11 @@ def render_markdown_index(schema, origin):
     return "\n\n".join(parts) + "\n"
 
 
-def render_markdown(schema, origin):
-    files = {"index.md": render_markdown_index(schema, origin)}
+def render_markdown(schema, origin, language=None, language_file=None):
+    """Sans fichier langue, les fichiers ne contiennent que ce que dit la base."""
+    files = {"index.md": render_markdown_index(schema, origin, language, language_file)}
     for table in schema.tables:
-        files[file_stem(table) + ".md"] = render_markdown_table(schema, table)
+        files[file_stem(table) + ".md"] = render_markdown_table(schema, table, language)
     return files
 
 
@@ -582,7 +791,12 @@ def main():
                         help=f"hôte:port/service (défaut : {DEFAULT_DSN})")
     parser.add_argument("--with-storage", action="store_true",
                         help="format sql : conserver tablespaces et attributs de stockage")
+    parser.add_argument("--lang", type=Path, metavar="FICHIER.php",
+                        help="format markdown : fichier langue de kadlib (lang/fr.inc.php) "
+                             "qui enrichit les commentaires des tables et des colonnes")
     args = parser.parse_args()
+    if args.lang and args.format != "markdown":
+        parser.error("--lang ne s'applique qu'au format markdown")
 
     password = os.environ.get(PASSWORD_VARIABLE) or getpass.getpass(
         f"Mot de passe de {args.user}@{args.dsn} : ")
@@ -593,13 +807,19 @@ def main():
     origin = f"{args.user}@{args.dsn}"
     output = args.output or DEFAULT_OUTPUT[args.format]
     try:
+        # Le fichier langue est lu en premier : une erreur évite d'interroger la base.
+        language = Language.load(args.lang) if args.lang else None
+        if language and language.unknown_constants:
+            print("Avertissement : constantes PHP inconnues dans le fichier langue : "
+                  + ", ".join(language.unknown_constants), file=sys.stderr)
         script = build_script(with_ddl=args.format == "sql", with_storage=args.with_storage)
         sections = split_sections(run_sqlplus(args.user, args.dsn, password, script))
         schema = Schema(sections)
         if not schema.tables:
             raise ExportError(f"aucune table RESASAT_ dans le schéma {origin}")
         if args.format == "markdown":
-            files = render_markdown(schema, origin)
+            files = render_markdown(schema, origin, language,
+                                    args.lang.name if args.lang else None)
         else:
             files = render_sql(schema, parse_ddl(sections.get("ddl", "")), origin)
         write_files(output, files, EXTENSION[args.format])

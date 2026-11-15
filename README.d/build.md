@@ -71,10 +71,13 @@ L'outil n'utilise que la bibliothèque standard de Python 3.11 et interroge la b
 
 Le mot de passe Oracle est lu dans la variable d'environnement `RESASAT_PASSWORD` ; si elle est absente, il est demandé au clavier.
 
+L'option *--lang* demande en plus `php` dans le `PATH`.
+
 ### Utilisation
 
 ```
 tools/export-oracle-db.py --format markdown
+tools/export-oracle-db.py --format markdown --lang /chemin/vers/addons/Resasat/lang/fr.inc.php
 tools/export-oracle-db.py --format sql
 ```
 
@@ -82,10 +85,25 @@ Options :
 * *--output RÉPERTOIRE* : autre répertoire de sortie.
 * *--user* et *--dsn* : autre compte ou autre base (par défaut `resaora` et `resasat-rhel96:1521/PDB1`).
 * *--with-storage* : en format *sql*, conserve les tablespaces et les attributs de stockage, retirés par défaut.
+* *--lang FICHIER.php* : en format *markdown*, enrichit les commentaires avec le fichier langue de kadlib (voir ci-dessous). Sans cette option, les fichiers ne contiennent que ce que dit la base.
 
 À chaque exécution, les fichiers du même format qui ne correspondent plus à une table sont supprimés du répertoire de sortie.
 
 En format *sql*, les clés étrangères sont dans le fichier de leur table : l'ordre de chargement des fichiers compte. L'en-tête de chaque fichier liste les tables à créer avant.
+
+### Fichier langue de kadlib
+
+RESASAT utilise la bibliothèque PHP kadlib, qui décrit dans un fichier langue (*addons/Resasat/lang/fr.inc.php*) ce que la base ne dit pas : le nom des tables et des colonnes tel qu'il est présenté aux utilisateurs, la signification des valeurs énumérées et les clés étrangères, dont la plupart ne sont pas des contraintes dans la base.
+
+Avec l'option *--lang*, l'outil ajoute :
+* au commentaire de la table, dans sa page et dans *index.md* : le nom présenté aux utilisateurs. Il vient de la variable qui porte le nom de la table (`$resasat_channel`) ou, à défaut, de son pluriel (`$resasat_amendments`) ;
+* au commentaire de la colonne, en gras : le nom présenté aux utilisateurs (`$resasat_channel_name`) ;
+* pour une colonne énumérée (masque `ENUM` ou `ENUMORNULL`) : les valeurs et leur signification. Au-delà de 10 valeurs, elles sont dans une section « Valeurs de … » à la suite du tableau des colonnes ;
+* pour une clé étrangère (masque `FK`, `FKORNULL` ou `FKNOLIST`) : la colonne et la table visées, avec un lien si la table est exportée.
+
+Le commentaire enregistré dans la base, s'il existe, reste à la fin.
+
+Le fichier langue est du code PHP : l'outil le fait évaluer par `php` après avoir chargé les fichiers *\*defines.inc.php* de l'application (le répertoire parent de *lang/*) et des modules voisins, qui définissent ses constantes. Une constante qui reste inconnue est signalée par un avertissement et garde son nom à la place de sa valeur.
 
 ### Tests
 
@@ -101,10 +119,13 @@ Une première série se passe de la base : elle part d'une sortie de `sqlplus` �
 * le contenu des fichiers Markdown : un seul titre H1, liens entre tables, sections vides omises, caractères `|` et retours à la ligne dans les commentaires ;
 * le contenu des fichiers SQL : ordre des objets, tables à créer avant, apostrophes des commentaires ;
 * la suppression des fichiers qui ne correspondent plus à une table ;
-* les erreurs de la ligne de commande (format absent ou inconnu, `sqlplus` introuvable).
+* les erreurs de la ligne de commande (format absent ou inconnu, `sqlplus` introuvable, *--lang* avec le format *sql*, fichier langue introuvable) ;
+* l'enrichissement par le fichier langue : noms des tables et des colonnes, énumérations courtes et longues, clés étrangères, et l'absence de changement sans l'option *--lang* ;
+* la lecture par `php` du fichier langue d'essai de *tests/tools/fixtures/kadlib/* : constantes connues et inconnues, entités HTML. Ces tests sont sautés si `php` est absent.
 
 Une seconde série lance l'outil sur la base RESASAT. Elle est sautée si la variable `RESASAT_PASSWORD` ou `sqlplus` sont absents. Elle vérifie :
 * les deux formats : un fichier par table, les mêmes tables dans les deux, aucun lien Markdown vers un fichier absent ;
+* le format *markdown* avec le fichier langue d'essai ;
 * le DDL sans nom de schéma ni tablespace, et avec tablespace pour l'option *--with-storage* ;
 * un mot de passe erroné : message court, code de retour 1, fichiers existants conservés. Ce test fait une tentative de connexion refusée à chaque lancement.
 
