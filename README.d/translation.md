@@ -1,6 +1,8 @@
 # Traduction
 
-| Anglais | Francais |
+| Anglais | Français |
 |=========|==========|
 | Amendment | Amendement |
+| EIRP | PIRE |
+| ERP | PAR |
 
