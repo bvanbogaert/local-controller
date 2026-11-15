@@ -47,35 +47,23 @@ Pour les formules
   * $…$ en ligne dans le texte
   * $$…$$ en bloc entre deux paragraphe
 
-# Export en PDF
+# Convention en Markdown
 
-La documentation doit pouvoir être exportée en PDF:
-* Un document global (servant pour le dossier technique final) reprenant tous les sous documents référencés dans *README.md*
-  * La première section contient *README.md*
-  * Les sections suivantes contiennent les sous documents.
-  * Les liens vers les documents sont remplacés par le nom de la section et, si possible, cliquable. 
-* Chaque document peut-être converti séparément, par exemple pour faciliter les cycles de revue.
+* Un seul titre H1 par fichier
+* Des liens relatifs entre documents
+* Pas de HTML brut
+* Les images dans un sous-dossier fixe *README.d/media/*.
 
 # Organisation de la documentation
 
-De préférence, les documents doivent rester d'une taille raisonnable (pour l'instant, considéront la limite à 5000 mots). Préviens moi quand un document devient trop grand.
+De préférence, les documents doivent rester d'une taille raisonnable (pour l'instant, considérons la limite à 5000 mots). Préviens moi quand un document devient trop grand.
 
-*README.md* contient principalement les liens vers la documentation avec une description sommaire.
-* *README.d/* contient les documents. Par exemple:
-  * *README.d/build.md* décrit l'installation de l'environnement de développement et la procédure de fabrication. 
-  * *README.d/installation.md* décrit l'installation de l'environnement de production. 
-  * *README.d/translation.md* donne la traduction sous la forme d'un tableau de l'anglais vers le Français des termes techniques utilisés dans le code; pas de définition.
-  * *README.d/glossary.md* donne la définition des termes utilisés dans le projet. 
-
-# Maintenir la documentation
-
-Si le changement modifie le fonctionnel, le modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'atend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification du code. En cas de doute, demande.
-
-# Liste des documents
-
-La liste exhaustive de la documentation doit être maintenue dans *README.md* avec:
+La liste exhaustive de la documentation, notamment le contenu de *README.d/*, doit être maintenue dans *README.md* avec:
 * Lien vers le document
 * Le nom de fichier
 * Le titre du document (le premier H1)
 * En une phrase, la description de son contenu
 
+# Maintenir la documentation
+
+Si le changement modifie le fonctionnel, le modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'atend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification du code. En cas de doute, demande.
