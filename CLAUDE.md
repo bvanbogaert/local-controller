@@ -2,7 +2,7 @@
 
 L'application est un simulateur du contrôleur local. Les provisions pour en faire le contrôleur réel (voire un composant du future RESASAT) sont bienvenues si, et seulement si, elles ne compliquent ni ne retardent le simulateur. En cas de doute, demander.
 
-Ce projet correspond au Lot 2 de l'offre:
+Ce projet correspond au Lot 3 de l'offre:
 /home/apache/GitProjects/docs-resasat/offre-interface-controleur.md
 
 Il contient aussi le lot 1 de la même offre:
@@ -10,17 +10,7 @@ Il contient aussi le lot 1 de la même offre:
 
 # La plateforme de développement et la plateforme cible
 
-RedHat 9.6 afin de pouvoir faire tourner le simulateur sur la plateforme de développement de RESASAT. 
-
-Le front end est le même que mes projets personnels.
-
-Frontend:
-* Type script
-* React
-
-Backend:
-* Python
-* FastAPI
+Voir *README.md*
 
 # Langue
 
@@ -64,6 +54,10 @@ La liste exhaustive de la documentation, notamment le contenu de *README.d/*, do
 * Le titre du document (le premier H1)
 * En une phrase, la description de son contenu
 
+Les fichiers suivant ne sont pas destinés à être livrés:
+* TODO.md: à faire, mais pas maintenant
+* DONE.md; garder trace des entrées retirées de TODO.md
+
 # Maintenir la documentation
 
-Si le changement modifie le fonctionnel, le modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'atend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification du code. En cas de doute, demande.
+Si le changement modifie le fonctionnel, le modification du code met à jour, dans le même changement, le document concerné, la liste du README, le glossaire et les traductions. Par exemple, l'ajout d'un bouton est un changement fonctionnel: on s'atend à une modification de la documentation. La correction d'une erreur de syntaxe ne doit pas faire l'objet d'une modification de la documentation. En cas de doute, demande.

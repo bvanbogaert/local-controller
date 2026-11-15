@@ -6,7 +6,7 @@ Questions/Remarques:
 * Pour identifier les ressources (véhicule, centre, etc), on utilise l'identification numérique interne de RESASAT (`id`), mais toujours accompagnée du nom en clair pour l'affichage.  
 * Quelles sont les unités des `eirp`?
 
-# **1 Principes**
+## **Principes**
 
 * **Transport** : 
   HTTPS, corps en JSON (UTF-8), chemins préfixés par `/api/v2`.  
@@ -24,10 +24,10 @@ Questions/Remarques:
 * **Identification des émetteurs, des donneurs d'ordre, des station complémentaires, des satellites et des slots** : 
   Les identifications sont celles utilisées par RESASAT. L'unicité est garantie par l'identifiant numérique `id` utilisé par RESASAT et est toujours accompagné par le nom en clair.  
 * **Erreurs** : 
-  Codes HTTP usuels et corps d'erreur normalisé (RFC 9457\) avec un code applicatif.
+  Codes HTTP usuels et corps d'erreur normalisé (RFC 9457) avec un code applicatif.
 
 
-# **2 API exposée par le contrôleur local (appelée par RESASAT)**
+## **API exposée par le contrôleur local (appelée par RESASAT)**
 
 | Méthode | Chemin | Rôle | Périmètre |
 | ----- | ----- | ----- | ----- |
@@ -36,7 +36,7 @@ Questions/Remarques:
 | GET | `/transmissions` | Lister les transmissions connues du contrôleur (`id`, `version`) | Base |
 | GET | `/status` | Lire l'état de la station à la demande | Base |
 
-# **3 API exposée par RESASAT (appelée par le contrôleur local)**
+## **API exposée par RESASAT (appelée par le contrôleur local)**
 
 | Méthode | Chemin | Rôle | Périmètre |
 | ----- | ----- | ----- | ----- |
@@ -48,7 +48,7 @@ Questions/Remarques:
 | GET | `/resources?from=…&to=…&type=…` | Disponibilité des véhicules, des centres et des slots satellite sur une période | O3 |
 | POST | `/stations/{station}/reservation-requests` | Proposer une réservation | O4 |
 
-# **4 Cycle de vie d'une configuration**
+## **Cycle de vie d'une configuration**
 
 1. RESASAT envoie la configuration (`PUT /transmissions/{id}`).  
 2. Le contrôleur répond immédiatement : `received` s'il a enregistré le message, ou une erreur s'il le refuse (données invalides, équipement inconnu).   
@@ -59,11 +59,11 @@ Questions/Remarques:
 5. Une modification suit le même chemin avec une `version` supérieure.   
    Une annulation utilise `DELETE` et est acquittée de la même manière.
 
-# **5 Resynchronisation**
+## **Resynchronisation**
 
 Le contrôleur local appelle `POST /stations/{station}/transmissions/sync` à intervalle régulier et à chaque retour en ligne. Il envoie la liste des transmissions à venir qu'il connaît :
 
-```
+```json
 {
   "from": "2026-10-23T00:00:00Z",
   "to": "2026-10-30T00:00:00Z",
@@ -76,13 +76,13 @@ Le contrôleur local appelle `POST /stations/{station}/transmissions/sync` à in
 
 RESASAT compare avec son propre planning et transmet à nouveau les écarts (les transmissions manquantes ou périmées) par le canal habituel. De son côté, RESASAT peut vérifier à tout moment ce que connaît un contrôleur avec `GET /transmissions`.
 
-# **6 Exemple : configuration d'une transmission**
+## **Exemple : configuration d'une transmission**
 
 Cet exemple reprend une transmission réelle au format actuel. 
 
 Le bloc `amendmentStates` relève de l'option O1 (ERRATUM: en non pas `others` comme écrit dans l'offre).
 
-```
+```json
 {
   "id": 369286,
   "version": 1,
@@ -138,11 +138,11 @@ Le bloc `amendmentStates` relève de l'option O1 (ERRATUM: en non pas `others` c
 
 Les unités de la PIRE (`eirp`) et du niveau de line-up doivent être clarifiées.
 
-# **7 Exemple : état de la station**
+## **Exemple : état de la station**
 
 Les blocs `antenna` et `weather` relèvent de l'option O2.
 
-```
+```json
 {
   "timestamp": "2026-10-23T19:35:12Z",
   "mode": "automatic",
@@ -157,14 +157,14 @@ Les blocs `antenna` et `weather` relèvent de l'option O2.
 }
 ```
 
-# **8 Exemple : réponse à une proposition de réservation (option O4)**
+## **Exemple : réponse à une proposition de réservation (option O4)**
 
-```
+```json
 {
   "decision": "refused",
   "reasons": [
     { "resource": "slot", "id": 13721, "name": "Perm 1", "code": "SLOT_UNAVAILABLE" },
-    { "resource": "emitter", "id": "4801", "name": "D Bastia", "code": "EMITTER_UNAVAILABLE" }
+    { "resource": "emitter", "id": 4801, "name": "D Bastia", "code": "EMITTER_UNAVAILABLE" }
   ]
 }
 ```

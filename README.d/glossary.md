@@ -9,7 +9,9 @@ Voir PIRE.
 ## ERP
 
 EN: Effective Radiated Power 
+
 ou parfois 
+
 EN: Equivalent Radiated Power
 
 Voir PAR
@@ -25,7 +27,7 @@ Voir ERP
 
 Puissance isotrope rayonnée équivalente.
 Elle est référencée à une antenne isotrope.
-PIRE = 2,15dB
+$ \text{PIRE} = \text{PAR} + 2{,}15\text{ dB} $
 
 Voir EIRP
 

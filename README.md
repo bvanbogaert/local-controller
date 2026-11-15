@@ -2,12 +2,30 @@
 
 ## Description
 
-Application destinée initialement pour simuler la version 2 des contrôleurs locaux, notamment le protocole INTERFACE_CONTROLLERV2 tel que décrit dans l'offre du 13/11/2023 faite à France Télévision.
+Application destinée initialement pour simuler la version 2 des contrôleurs locaux, notamment le protocole INTERFACE_CONTROLLERV2 tel que décrit dans l'offre du 13/11/2026 faite à France Télévision.
 
-Provision:
+# La plateforme de développement et la plateforme cible
+
+RedHat 9.6 afin de pouvoir faire tourner le simulateur sur la plateforme de développement de RESASAT. 
+
+Frontend:
+* Type script
+* React
+* Database: DuckDB (avec provision pour éventuellement supporter MariaDB et Oracle 19c les deux DB historiques de RESASAT)
+
+Backend:
+* Python
+* FastAPI
+
+Pour le datamodel de la base de données, on peut partir de celle de RESASAT accessible avec la commande suivante:
+```
+export ORACLE_HOME=/opt/oracle/product/19c/dbhome_1; /opt/oracle/product/19c/dbhome_1/bin/sqlplus resaora/resasat123@resasat-rhel96:1521/PDB1
+```
+
+Provision pour options à venir, mais sans compromettre la livraison du prototype:
 
 * A terme, elle pourrait devenir l'application locale, voire un module du future RESASAT.
-* Support de plusieurs bases de données: DuckDB, MariaDB, Oracle 19c ou plus récent.
+* Support de plusieurs bases de données en plus de DuckDB: MariaDB, Oracle 19c ou plus récent.
 
 ## Links
 
