@@ -64,8 +64,8 @@ La liste exhaustive de la documentation, notamment le contenu de *README.d/*, do
 * En une phrase, la description de son contenu
 
 Les fichiers suivant ne sont pas destinés à être livrés:
-* TODO.md: à faire, mais pas maintenant. Maintenu par le développeur.
-* DONE.md: garder trace des entrées retirées de TODO.md. Maintenu par le développeur.
+* TODO.md: à faire, mais pas maintenant. Maintenu par Benoit, ne pas modifier.
+* DONE.md: garder trace des entrées retirées de TODO.md. Maintenu par Benoit, ne pas modifier.
 
 # Maintenir la documentation
 
