@@ -43,6 +43,22 @@ L'outil signale, sans s'arrêter :
 
 Si Chromium n'est pas dans le `PATH`, son chemin est donné par la variable d'environnement `CHROMIUM`.
 
+### Tests
+
+Les tests lancent l'outil sur les documents d'essai de *tests/tools/fixtures/* et sur la documentation du dépôt, puis relisent le texte des PDF produits. Ils demandent en plus le paquet *poppler-utils* (`pdftotext`, `pdfinfo`, `pdftohtml`).
+
+```
+python3.11 -m unittest discover -s tests/tools -v
+```
+
+Ils vérifient :
+* le dessin des schémas Mermaid et drawio.svg, et la conversion des formules ;
+* l'arrêt sans PDF quand un schéma Mermaid contient une erreur ;
+* les avertissements (image introuvable, nombre de titres H1) ;
+* le document global : table des matières, une section par document, aucun document de *README.d/* oublié dans *README.md*.
+
+Les tests ne jugent pas la mise en page : après une modification de la feuille de style, il faut relire un PDF.
+
 ## Export du schéma de la base RESASAT
 
 L'outil en python *tools/export-oracle-db.py* extrait le schéma de la base de données Oracle de RESASAT. Seules les tables dont le nom commence par `resasat_` sont exportées. L'option *--format* choisit la sortie :
@@ -73,16 +89,23 @@ En format *sql*, les clés étrangères sont dans le fichier de leur table : l'o
 
 ### Tests
 
-Les tests lancent l'outil sur les documents d'essai de *tests/tools/fixtures/* et sur la documentation du dépôt, puis relisent le texte des PDF produits. Ils demandent en plus le paquet *poppler-utils* (`pdftotext`, `pdfinfo`, `pdftohtml`).
+Les tests de *tests/tools/test_export_oracle_db.py* se lancent avec ceux de l'export en PDF :
 
 ```
 python3.11 -m unittest discover -s tests/tools -v
 ```
 
-Ils vérifient :
-* le dessin des schémas Mermaid et drawio.svg, et la conversion des formules ;
-* l'arrêt sans PDF quand un schéma Mermaid contient une erreur ;
-* les avertissements (image introuvable, nombre de titres H1) ;
-* le document global : table des matières, une section par document, aucun document de *README.d/* oublié dans *README.md*.
+Une première série se passe de la base : elle part d'une sortie de `sqlplus` écrite dans le fichier de test. Elle vérifie :
+* la reconstitution du type des colonnes ;
+* la lecture des tables, colonnes, valeurs par défaut, contraintes, index, déclencheurs et séquences ;
+* le contenu des fichiers Markdown : un seul titre H1, liens entre tables, sections vides omises, caractères `|` et retours à la ligne dans les commentaires ;
+* le contenu des fichiers SQL : ordre des objets, tables à créer avant, apostrophes des commentaires ;
+* la suppression des fichiers qui ne correspondent plus à une table ;
+* les erreurs de la ligne de commande (format absent ou inconnu, `sqlplus` introuvable).
 
-Les tests ne jugent pas la mise en page : après une modification de la feuille de style, il faut relire un PDF.
+Une seconde série lance l'outil sur la base RESASAT. Elle est sautée si la variable `RESASAT_PASSWORD` ou `sqlplus` sont absents. Elle vérifie :
+* les deux formats : un fichier par table, les mêmes tables dans les deux, aucun lien Markdown vers un fichier absent ;
+* le DDL sans nom de schéma ni tablespace, et avec tablespace pour l'option *--with-storage* ;
+* un mot de passe erroné : message court, code de retour 1, fichiers existants conservés. Ce test fait une tentative de connexion refusée à chaque lancement.
+
+Les tests ne rejouent pas le DDL produit sur une base.

@@ -316,7 +316,7 @@ class Schema:
             self.tables[table]["indexes"].append(indexes[name])
         for name, column, descend in rows["index_columns"]:
             if name in indexes:
-                indexes[name]["columns"].append(column + (" DESC" if descend == "DESC" else ""))
+                indexes[name]["columns"].append((column, descend == "DESC"))
 
         for name, table, trigger_type, event, status in rows["triggers"]:
             self.tables[table]["triggers"].append({
@@ -450,7 +450,10 @@ def render_markdown_table(schema, table):
         parts.append("## Index")
         parts.append(markdown_table(
             ["Index", "Colonnes", "Unique", "Type"],
-            [[code(label(index["name"])), names(index["columns"]), yes_no(index["unique"]),
+            [[code(label(index["name"])),
+              ", ".join(code(label(column) + (" DESC" if descending else ""))
+                        for column, descending in index["columns"]),
+              yes_no(index["unique"]),
               cell(index["type"])] for index in info["indexes"]]))
 
     if info["triggers"]:
