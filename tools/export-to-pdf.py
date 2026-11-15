@@ -41,6 +41,7 @@ FOOTER = ('<div style="font-size:8pt; width:100%; text-align:center;">'
           '<span class="pageNumber"></span> / <span class="totalPages"></span></div>')
 
 CSS = """
+html { background: white; }
 body { font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
        font-size: 10.5pt; line-height: 1.4; max-width: none; margin: 0; padding: 0; }
 h1, h2, h3, h4 { break-after: avoid; }
@@ -55,7 +56,10 @@ th, td { border: 1px solid #999; padding: 3pt 6pt; vertical-align: top; }
 th { background: #eee; }
 tr { break-inside: avoid; }
 code { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; font-size: 9pt; }
+/* Un chemin long peut être coupé pour que le tableau tienne dans la page,
+   mais une cellule qui ne contient que du code garde une largeur utile. */
 td code { overflow-wrap: anywhere; }
+td:has(> code:only-child) { min-width: 11em; }
 pre { background: #f5f5f5; border: 1px solid #ddd; padding: 6pt;
       white-space: pre-wrap; overflow-wrap: anywhere; }
 pre.mermaid { background: none; border: none; text-align: center; break-inside: avoid; }
@@ -65,11 +69,21 @@ figure { margin: 1em 0; text-align: center; break-inside: avoid; }
 
 # Promesse attendue avant l'impression : schémas dessinés et polices chargées.
 READY_SCRIPT = """
+// Dès le chargement du script : sinon Mermaid dessine de lui-même, avant toute vérification.
+if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
 window.__docReady = new Promise((resolve, reject) => {
   window.addEventListener('load', async () => {
     try {
       if (window.mermaid) {
-        mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+        // Sans cette vérification, Mermaid dessine un panneau d'erreur à la place du schéma.
+        const diagrams = [...document.querySelectorAll('pre.mermaid')];
+        for (const [index, diagram] of diagrams.entries()) {
+          try {
+            await mermaid.parse(diagram.textContent);
+          } catch (e) {
+            throw new Error(`schéma Mermaid n° ${index + 1} : ${e.message || e}`);
+          }
+        }
         await mermaid.run();
       }
       await document.fonts.ready;
@@ -381,7 +395,7 @@ class Browser:
         if "exceptionDetails" in ready:
             details = ready["exceptionDetails"]
             reason = details.get("exception", {}).get("description") or details.get("text")
-            raise ExportError(f"Erreur dans un schéma Mermaid ou dans la page :\n{reason}")
+            raise ExportError(f"Le document ne peut pas être mis en page.\n{reason}")
         pdf = self.call("Page.printToPDF", {
             **PAPER, "printBackground": True, "displayHeaderFooter": True,
             "headerTemplate": "<span></span>", "footerTemplate": FOOTER}, session)
