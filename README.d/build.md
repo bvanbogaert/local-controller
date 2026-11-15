@@ -42,3 +42,19 @@ L'outil signale, sans s'arrêter :
 * une image introuvable.
 
 Si Chromium n'est pas dans le `PATH`, son chemin est donné par la variable d'environnement `CHROMIUM`.
+
+### Tests
+
+Les tests lancent l'outil sur les documents d'essai de *tests/tools/fixtures/* et sur la documentation du dépôt, puis relisent le texte des PDF produits. Ils demandent en plus le paquet *poppler-utils* (`pdftotext`, `pdfinfo`, `pdftohtml`).
+
+```
+python3.11 -m unittest discover -s tests/tools -v
+```
+
+Ils vérifient :
+* le dessin des schémas Mermaid et drawio.svg, et la conversion des formules ;
+* l'arrêt sans PDF quand un schéma Mermaid contient une erreur ;
+* les avertissements (image introuvable, nombre de titres H1) ;
+* le document global : table des matières, une section par document, aucun document de *README.d/* oublié dans *README.md*.
+
+Les tests ne jugent pas la mise en page : après une modification de la feuille de style, il faut relire un PDF.
