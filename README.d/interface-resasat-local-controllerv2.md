@@ -1,19 +1,33 @@
-# Interface entre REASASAT et le contrôleur local version 2
+# interface entre RESASAT et les contrôleurs locaux, version 2
 
-Cette section donne les grandes lignes. Le lot 1 les précise et les fige.
+Questions/Remarques:
+* `/api/v2` à la place de `/api/v1`.
+* Dans l'offre, il y a eu confusion entre la liste des stations complémentaires `others` et l'état des amendements `amendmentStates`.
+* Pour identifier les ressources (véhicule, centre, etc), on utilise l'identification numérique interne de RESASAT (`id`), mais toujours accompagnée du nom en clair pour l'affichage.  
+* Quelles sont les unités des `eirp`?
 
-## **1 Principes**
+# **1 Principes**
 
-* **Transport** : HTTPS, corps en JSON (UTF-8), chemins préfixés par `/api/v1`.  
-* **Topologie bidirectionnelle** : RESASAT et le contrôleur exposent chacun une API. RESASAT pousse les configurations vers le contrôleur.  
+* **Transport** : 
+  HTTPS, corps en JSON (UTF-8), chemins préfixés par `/api/v2`.  
+* **Topologie bidirectionnelle** : 
+  RESASAT et le contrôleur exposent chacun une API. RESASAT pousse les configurations vers le contrôleur.  
   Le contrôleur pousse son état et ses acquittements vers RESASAT.  
-* **Authentification** : une paire de clefs privée et publique par station et pour le serveur RESASAT, dans chaque sens.  
-* **Dates** : ISO 8601 en UTC, par exemple `2026-10-23T19:35:00Z`.  
-* **Unités**: elles sont explicites dans le nom des champs (Hz, symboles/s, bit/s).  
-* **Identification** : une transmission est identifiée par son `id` (numéro de réservation dans RESASAT) et sa `version`, qui augmente à chaque modification. Un message déjà reçu peut être rejoué sans effet ; une version plus ancienne que celle connue est ignorée.  
-* **Erreurs** : codes HTTP usuels et corps d'erreur normalisé (RFC 9457\) avec un code applicatif.
+* **Authentification** : 
+  Une paire de clefs privée et publique par station et pour le serveur RESASAT, dans chaque sens.  
+* **Dates** : 
+  ISO 8601 en UTC, par exemple `2026-10-23T19:35:00Z`.  
+* **Unités**: 
+  Elles sont explicites dans le nom des champs (Hz, symboles/s, bit/s).  
+* **Identification des transmissions** : 
+  Une transmission est identifiée par son `id` (numéro de réservation dans RESASAT) et sa `version`, qui augmente à chaque modification. Un message déjà reçu peut être rejoué sans effet ; une version plus ancienne que celle connue est ignorée.  
+* **Identification des émetteurs, des donneurs d'ordre, des station complémentaires, des satellites et des slots** : 
+  Les identifications sont celles utilisées par RESASAT. L'unicité est garantie par l'identifiant numérique `id` utilisé par RESASAT et est toujours accompagné par le nom en clair.  
+* **Erreurs** : 
+  Codes HTTP usuels et corps d'erreur normalisé (RFC 9457\) avec un code applicatif.
 
-## **2 API exposée par le contrôleur local (appelée par RESASAT)**
+
+# **2 API exposée par le contrôleur local (appelée par RESASAT)**
 
 | Méthode | Chemin | Rôle | Périmètre |
 | ----- | ----- | ----- | ----- |
@@ -22,7 +36,7 @@ Cette section donne les grandes lignes. Le lot 1 les précise et les fige.
 | GET | `/transmissions` | Lister les transmissions connues du contrôleur (`id`, `version`) | Base |
 | GET | `/status` | Lire l'état de la station à la demande | Base |
 
-## **3 API exposée par RESASAT (appelée par le contrôleur local)**
+# **3 API exposée par RESASAT (appelée par le contrôleur local)**
 
 | Méthode | Chemin | Rôle | Périmètre |
 | ----- | ----- | ----- | ----- |
@@ -34,7 +48,7 @@ Cette section donne les grandes lignes. Le lot 1 les précise et les fige.
 | GET | `/resources?from=…&to=…&type=…` | Disponibilité des véhicules, des centres et des slots satellite sur une période | O3 |
 | POST | `/stations/{station}/reservation-requests` | Proposer une réservation | O4 |
 
-## **4 Cycle de vie d'une configuration**
+# **4 Cycle de vie d'une configuration**
 
 1. RESASAT envoie la configuration (`PUT /transmissions/{id}`).  
 2. Le contrôleur répond immédiatement : `received` s'il a enregistré le message, ou une erreur s'il le refuse (données invalides, équipement inconnu).   
@@ -45,7 +59,7 @@ Cette section donne les grandes lignes. Le lot 1 les précise et les fige.
 5. Une modification suit le même chemin avec une `version` supérieure.   
    Une annulation utilise `DELETE` et est acquittée de la même manière.
 
-## **5 Resynchronisation**
+# **5 Resynchronisation**
 
 Le contrôleur local appelle `POST /stations/{station}/transmissions/sync` à intervalle régulier et à chaque retour en ligne. Il envoie la liste des transmissions à venir qu'il connaît :
 
@@ -62,9 +76,11 @@ Le contrôleur local appelle `POST /stations/{station}/transmissions/sync` à in
 
 RESASAT compare avec son propre planning et transmet à nouveau les écarts (les transmissions manquantes ou périmées) par le canal habituel. De son côté, RESASAT peut vérifier à tout moment ce que connaît un contrôleur avec `GET /transmissions`.
 
-## **6 Exemple : configuration d'une transmission**
+# **6 Exemple : configuration d'une transmission**
 
-Cet exemple reprend une transmission réelle au format actuel. Le bloc `others` relève de l'option O1.
+Cet exemple reprend une transmission réelle au format actuel. 
+
+Le bloc `amendmentStates` relève de l'option O1 (ERRATUM: en non pas `others` comme écrit dans l'offre).
 
 ```
 {
@@ -73,10 +89,11 @@ Cet exemple reprend une transmission réelle au format actuel. Le bloc `others` 
   "title": "Direct Bastia",
   "start": "2026-10-23T19:35:00Z",
   "end": "2026-10-23T19:48:00Z",
-  "source": "D Bastia",
-  "destination": "ORLEANS",
-  "slot": "Perm 1",
+  "source": { "id": 4801, "name": "D Bastia" },
+  "destination": { "id": 36, "name": "ORLEANS" },
+  "slot": { "id": 13721, "name": "Perm 1" },
   "satellite": {
+    "id": 182,
     "name": "Eutelsat 8 West B V",
     "txFrequencyHz": 14047000000,
     "txPolarisation": "horizontal",
@@ -109,16 +126,19 @@ Cet exemple reprend une transmission réelle au format actuel. Le bloc `others` 
     { "type": "ird", "number": 1 }
   ],
   "others": [
-    { "station": "D Bastia", "role": "emitter", "configState": "acknowledged" },
-    { "station": "ORLEANS", "role": "orderingCenter", "configState": "sent" },
-    { "station": "AMIENS", "role": "complementaryCenter", "configState": "pending" }
+    { "id": 25, "name": "AMIENS" }
+  ],
+  "amendmentStates": [
+    { "station": { "id": 4801, "name": "D Bastia" }, "role": "emitter", "amendmentState": "acknowledged" },
+    { "station": { "id": 36, "name": "ORLEANS" }, "role": "orderingCenter", "amendmentState": "sent" },
+    { "station": { "id": 25, "name": "AMIENS" }, "role": "complementaryCenter", "amendmentState": "pending" }
   ]
 }
 ```
 
 Les unités de la PIRE (`eirp`) et du niveau de line-up doivent être clarifiées.
 
-## **7 Exemple : état de la station**
+# **7 Exemple : état de la station**
 
 Les blocs `antenna` et `weather` relèvent de l'option O2.
 
@@ -137,14 +157,14 @@ Les blocs `antenna` et `weather` relèvent de l'option O2.
 }
 ```
 
-## **8 Exemple : réponse à une proposition de réservation (option O4)**
+# **8 Exemple : réponse à une proposition de réservation (option O4)**
 
 ```
 {
   "decision": "refused",
   "reasons": [
-    { "resource": "slot", "name": "Perm 1", "code": "SLOT_UNAVAILABLE" },
-    { "resource": "emitter", "name": "D Bastia", "code": "EMITTER_UNAVAILABLE" }
+    { "resource": "slot", "id": 13721, "name": "Perm 1", "code": "SLOT_UNAVAILABLE" },
+    { "resource": "emitter", "id": "4801", "name": "D Bastia", "code": "EMITTER_UNAVAILABLE" }
   ]
 }
 ```
@@ -160,4 +180,3 @@ Codes prévus :
 | `STATION_SLOT_INCOMPATIBLE` | La station n'est pas autorisée sur ce slot |
 
 Ces contrôles sont ceux que RESASAT applique déjà lors d'une réservation saisie par un utilisateur.
-
