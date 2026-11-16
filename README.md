@@ -60,6 +60,7 @@ Provision pour options à venir, mais sans compromettre la livraison du prototyp
 ## Liens
 
 * [build](README.d/build.md), "Fabrication", décrit l'installation de l'environnement de développement et la procédure de fabrication.
+* [database](README.d/database.md), "Base de données", décrit la base de données.
 * [glossary](README.d/glossary.md), "Glossaire", définit et clarifie les termes techniques.
 * [installation](README.d/installation.md), "Installation", décrit l'installation de l'environnement de production.
 * [interface-resasat-local-controllerv2](README.d/interface-resasat-local-controllerv2.md), "interface entre RESASAT et les contrôleurs locaux, version 2", spécifie l'interface entre RESASAT et l'application des contrôleurs locaux.
