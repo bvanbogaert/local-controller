@@ -1,0 +1,249 @@
+{
+  "name": "users",
+  "comment": "",
+  "columns": [
+    {
+      "name": "id",
+      "comment": "",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "vorname",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "nachname",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "kurz",
+      "comment": "",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "pw",
+      "comment": "",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "firma",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "gruppe",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "email",
+      "comment": "",
+      "type": "varchar",
+      "length": 60,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "acc",
+      "comment": "",
+      "type": "varchar",
+      "length": 4,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "tel1",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "tel2",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "fax",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "strasse",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "stadt",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "plz",
+      "comment": "",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "land",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "sprache",
+      "comment": "",
+      "type": "varchar",
+      "length": 2,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "mobil",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "loginname",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "ldap_name",
+      "comment": "",
+      "type": "varchar",
+      "length": 40,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "anrede",
+      "comment": "",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "sms",
+      "comment": "",
+      "type": "varchar",
+      "length": 60,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "role",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "proxy",
+      "comment": "",
+      "type": "varchar",
+      "length": 4000,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "settings",
+      "comment": "",
+      "type": "varchar",
+      "length": 4000,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "hrate",
+      "comment": "",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "users_end",
+      "comment": "",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "id"
+  ],
+  "indexes": []
+}

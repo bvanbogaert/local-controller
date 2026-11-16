@@ -15,10 +15,12 @@ Lancement, depuis la racine du dépôt :
 """
 
 import importlib.util
+import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from importlib.machinery import SourceFileLoader
@@ -30,15 +32,18 @@ LANGUAGE_FILE = (Path(__file__).resolve().parent / "fixtures" / "kadlib" / "addo
                  / "lang" / "fr.inc.php")
 
 
-def load_tool():
-    """Charge l'outil comme un module (son nom contient des tirets)."""
-    loader = SourceFileLoader("export_oracle_db", str(TOOL))
+def load_tool(path=TOOL):
+    """Charge un outil comme un module (son nom contient des tirets)."""
+    loader = SourceFileLoader(path.stem.replace("-", "_"), str(path))
     module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+    sys.modules[loader.name] = module  # les dataclasses y cherchent leur module
     loader.exec_module(module)
     return module
 
 
 tool = load_tool()
+# Le format json est celui que lit tools/create-db.py : sa validation sert de référence.
+create_db = load_tool(ROOT / "tools" / "create-db.py")
 
 SQLPLUS = Path(os.environ.get("ORACLE_HOME") or tool.DEFAULT_ORACLE_HOME) / "bin" / "sqlplus"
 NO_DATABASE = [reason for reason, missing in (
@@ -343,6 +348,137 @@ class SqlTest(unittest.TestCase):
             tool.render_sql(self.schema, items, "resaora@essai")
 
 
+class JsonTest(unittest.TestCase):
+
+    def setUp(self):
+        self.schema = tool.Schema(tool.split_sections(SAMPLE_OUTPUT))
+        files, self.warnings = tool.render_json(self.schema)
+        self.texts = files
+        self.tables = {name: json.loads(text) for name, text in files.items()}
+
+    @staticmethod
+    def oracle_column(data_type, precision="", scale="", char_length="0"):
+        return {"data_type": data_type, "precision": precision, "scale": scale,
+                "char_length": char_length}
+
+    def test_types(self):
+        cases = [
+            (("NUMBER", "1", "0"), ("int", None)),
+            (("NUMBER", "9", "0"), ("int", None)),
+            # Dix chiffres (dates Unix) ne tiennent plus sur 32 bits
+            (("NUMBER", "10", "0"), ("bigint", None)),
+            (("NUMBER", "18", ""), ("bigint", None)),
+            (("NUMBER", "19", "0"), None),
+            (("NUMBER", "10", "2"), None),
+            (("NUMBER", "", ""), None),
+            (("BINARY_DOUBLE",), ("double", None)),
+            (("FLOAT", "126"), ("double", None)),
+            (("VARCHAR2", "", "", "255"), ("varchar", 255)),
+            (("CHAR", "", "", "1"), ("varchar", 1)),
+            (("DATE",), None),
+            (("CLOB",), None),
+        ]
+        for arguments, expected in cases:
+            with self.subTest(arguments=arguments):
+                self.assertEqual(tool.json_type(self.oracle_column(*arguments)), expected)
+
+    def test_defaults(self):
+        cases = [("", (None, True)), ("NULL ", (None, True)), ("0", (0, True)),
+                 ("(-1)", (-1, True)), ("1.5", (1.5, True)), ("'sans nom' ", ("sans nom", True)),
+                 ("'l''un'", ("l'un", True)), ("''", ("", True)),
+                 ("SYSDATE", (None, False)), ("'a' || 'b'", (None, False))]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(tool.json_default(text), expected)
+
+    def test_files(self):
+        self.assertEqual(set(self.tables), {"resasat_channel.json", "resasat_station.json"})
+        for name, text in self.texts.items():
+            with self.subTest(file=name):
+                self.assertEqual(self.tables[name]["name"], name[:-5])
+                self.assertTrue(text.endswith("}\n"))
+        self.assertIn('"comment": "L\'intitulé"', self.texts["resasat_channel.json"])
+
+    def test_table(self):
+        table = self.tables["resasat_channel.json"]
+        self.assertEqual(table["comment"], "Canaux | satellite")
+        self.assertEqual(table["primary_key"], ["resasat_channel_id"])
+        self.assertEqual(table["columns"][0],
+                         {"name": "resasat_channel_id", "comment": "Identifiant sur deux lignes",
+                          "type": "int", "nullable": False, "default": None,
+                          "auto_increment": False})
+        self.assertEqual(table["columns"][1],
+                         {"name": "resasat_channel_name", "comment": "L'intitulé",
+                          "type": "varchar", "length": 100, "nullable": True,
+                          "default": "sans nom", "auto_increment": False})
+
+    def test_references_from_database_constraints(self):
+        columns = {c["name"]: c for c in self.tables["resasat_channel.json"]["columns"]}
+        self.assertEqual(columns["resasat_channel_station_fk"]["references"],
+                         {"table": "resasat_station", "column": "resasat_station_id"})
+        self.assertEqual(columns["resasat_channel_owner_fk"]["references"],
+                         {"table": "users", "column": "id"})
+        self.assertNotIn("references", columns["resasat_channel_id"])
+
+    def test_indexes(self):
+        # L'index de la clé primaire n'est pas repris ; la contrainte d'unicité
+        # sans index devient un index unique ; l'index décroissant est signalé.
+        self.assertEqual(self.tables["resasat_channel.json"]["indexes"],
+                         [{"name": "resasat_channel_name_uk", "unique": True,
+                           "columns": ["resasat_channel_name"]}])
+        self.assertIn("resasat_channel : index resasat_channel_name_idx ignoré "
+                      "(ordre décroissant ou expression)", self.warnings)
+        self.assertEqual(self.tables["resasat_station.json"]["indexes"], [])
+
+    def test_unmapped_types_are_kept_and_reported(self):
+        columns = {c["name"]: c for c in self.tables["resasat_station.json"]["columns"]}
+        self.assertEqual(columns["resasat_station_start"]["type"], "DATE")
+        self.assertIn("resasat_station.resasat_station_start : type DATE sans correspondance "
+                      "dans le modèle de données", self.warnings)
+        self.assertEqual(len(self.warnings), 3)  # DATE, NUMBER sans précision, index
+
+    def test_auto_increment(self):
+        self.assertIsNone(tool.auto_increment_column(self.schema, "RESASAT_CHANNEL"))
+        sample = SAMPLE_OUTPUT.replace("RESASAT_CHANNEL_ID_TRIG", "RESASAT_CHANNEL_AUTO_INC")
+        schema = tool.Schema(tool.split_sections(sample))
+        self.assertEqual(tool.auto_increment_column(schema, "RESASAT_CHANNEL"),
+                         "RESASAT_CHANNEL_ID")
+        table = json.loads(tool.render_json(schema)[0]["resasat_channel.json"])
+        self.assertEqual([c["auto_increment"] for c in table["columns"]],
+                         [True, False, False, False])
+        # Déclencheur désactivé : pas d'auto-incrément
+        disabled = sample.replace('"INSERT","ENABLED"', '"INSERT","DISABLED"')
+        self.assertIsNone(tool.auto_increment_column(
+            tool.Schema(tool.split_sections(disabled)), "RESASAT_CHANNEL"))
+
+    def test_language_file(self):
+        language = tool.Language(
+            labels={"resasat_channel": "Slot", "resasat_channel_id": "Index",
+                    "resasat_channel_name": "Nom"},
+            masks={"resasat_channel_id": ["FKNOLIST", "RESASAT_STATION", "RESASAT_STATION_ID",
+                                          "resasat_station_name"],
+                   "resasat_channel_name": ["ENUM", [["H", "Horizontale (X)"],
+                                                     ["V", "Verticale (Y)"]]]})
+        table = json.loads(tool.render_json(self.schema, language)[0]["resasat_channel.json"])
+        self.assertEqual(table["comment"], "Slot — Canaux | satellite")
+        self.assertEqual(table["columns"][0]["comment"], "Index — Identifiant sur deux lignes")
+        self.assertEqual(table["columns"][0]["references"],
+                         {"table": "resasat_station", "column": "resasat_station_id"})
+        self.assertEqual(table["columns"][1]["values"],
+                         {"H": "Horizontale (X)", "V": "Verticale (Y)"})
+
+    def test_files_are_read_by_create_db(self):
+        # Seuls les types sans correspondance sont refusés par tools/create-db.py
+        self.assertEqual(
+            create_db.validate_table(self.tables["resasat_channel.json"], "resasat_channel"),
+            ["colonne resasat_channel_owner_fk : type 'NUMBER' inconnu "
+             "(types acceptés : int, bigint, double, varchar)"])
+        self.assertEqual(
+            create_db.validate_table(self.tables["resasat_station.json"], "resasat_station"),
+            ["colonne resasat_station_start : type 'DATE' inconnu "
+             "(types acceptés : int, bigint, double, varchar)"])
+
+
 class WriteFilesTest(unittest.TestCase):
 
     def test_stale_files_are_removed(self):
@@ -373,7 +509,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertIn("--format", result.stderr)
 
     def test_unknown_format(self):
-        result = subprocess.run([str(TOOL), "--format", "json"],
+        result = subprocess.run([str(TOOL), "--format", "xml"],
                                 capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 2)
 
@@ -459,6 +595,32 @@ class DatabaseTest(unittest.TestCase):
                 self.assertNotIn(f'"{tool.DEFAULT_USER.upper()}".', content)
                 self.assertNotIn("TABLESPACE", content)
                 self.assertNotRegex(content, r"(?m)^(ORA-\d{5}|SP2-\d{4}):")
+
+    @unittest.skipUnless(shutil.which("php"), "php absent")
+    def test_json(self):
+        result = self.export("--format", "json", "--lang", str(LANGUAGE_FILE))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        match = re.match(r"(\d+) tables, (\d+) fichiers", result.stdout)
+        self.assertIsNotNone(match, result.stdout)
+        self.assertEqual(match.group(1), match.group(2))  # un fichier par table, sans index
+        files = sorted(self.output.glob("*.json"))
+        self.assertEqual(len(files), int(match.group(1)))
+        self.assertIn("users.json", [path.name for path in files])
+        valid = 0
+        for path in files:
+            with self.subTest(file=path.name):
+                table = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(table["name"], path.stem)
+                errors = create_db.validate_table(table, path.stem)
+                # Les seules erreurs admises sont les types signalés à l'export
+                for error in errors:
+                    self.assertIn("inconnu (types acceptés", error)
+                    column = error.split()[1]
+                    self.assertIn(f"{path.stem}.{column} : type", result.stderr)
+                valid += not errors
+        self.assertGreater(valid, 0)
+        channel = json.loads((self.output / "resasat_channel.json").read_text(encoding="utf-8"))
+        self.assertTrue(channel["comment"].startswith("Slot"))
 
     def test_sql_with_storage(self):
         self.assert_exported(self.export("--format", "sql", "--with-storage"))
@@ -654,7 +816,7 @@ class LanguageFileTest(unittest.TestCase):
 
 class LanguageCommandLineTest(unittest.TestCase):
 
-    def test_lang_is_for_markdown_only(self):
+    def test_lang_is_not_for_sql(self):
         result = subprocess.run([str(TOOL), "--format", "sql", "--lang", str(LANGUAGE_FILE)],
                                 capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 2)

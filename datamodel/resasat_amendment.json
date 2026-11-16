@@ -1,0 +1,133 @@
+{
+  "name": "resasat_amendment",
+  "comment": "Amendement des réservations",
+  "columns": [
+    {
+      "name": "resasat_amendment_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_amendment_reserv_fk",
+      "comment": "Réservation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_reservation",
+        "column": "resasat_reservation_id"
+      }
+    },
+    {
+      "name": "resasat_amendment_seq",
+      "comment": "Séq",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_amendment_station_fk",
+      "comment": "Station",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station",
+        "column": "resasat_station_id"
+      }
+    },
+    {
+      "name": "resasat_amendment_trial_count",
+      "comment": "Nombre d'essais",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_amendment_replicat_fk",
+      "comment": "Réplicat",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_replicat",
+        "column": "resasat_replicat_id"
+      }
+    },
+    {
+      "name": "resasat_amendment_state",
+      "comment": "État",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Nouveau",
+        "1": "Transmis",
+        "2": "Problème",
+        "3": "Acquitté",
+        "4": "Manuel",
+        "5": "Non applicable",
+        "6": "Refusé",
+        "7": "A acquitter"
+      }
+    },
+    {
+      "name": "resasat_amendment_deleted",
+      "comment": "Détruit",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Non",
+        "1": "Pour annulation",
+        "2": "Pour modification"
+      }
+    },
+    {
+      "name": "resasat_amendment_creation",
+      "comment": "Création",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_amendment_channel_fk",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_amendment_nodal_offset",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_amendment_id"
+  ],
+  "indexes": [
+    {
+      "name": "idx_resasat_amendment_stat",
+      "unique": false,
+      "columns": [
+        "resasat_amendment_state"
+      ]
+    }
+  ]
+}

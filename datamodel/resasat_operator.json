@@ -1,0 +1,45 @@
+{
+  "name": "resasat_operator",
+  "comment": "Opérateur",
+  "columns": [
+    {
+      "name": "resasat_operator_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_operator_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_operator_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_operator_phone",
+      "comment": "Téléphone",
+      "type": "varchar",
+      "length": 20,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_operator_id"
+  ],
+  "indexes": []
+}

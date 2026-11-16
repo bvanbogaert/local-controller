@@ -3,15 +3,17 @@
 
 Les tables dont le nom commence par RESASAT_, et la table USERS que beaucoup
 d'entre elles référencent, sont exportées dans l'un
-des deux formats :
+des trois formats :
 
 * markdown : un fichier .md par table, plus index.md, dans build/doc/resasat-db/ ;
 * sql      : un fichier .sql par table (DDL Oracle 19c produit par DBMS_METADATA),
-             plus _sequences.sql, dans build/sql/resasat-db/.
+             plus _sequences.sql, dans build/sql/resasat-db/ ;
+* json     : un fichier .json par table, dans build/json/resasat-db/, au format
+             du modèle de données de datamodel/ lu par tools/create-db.py.
 
-En format markdown, l'option --lang enrichit les commentaires avec le fichier
-langue de kadlib (noms présentés aux utilisateurs, valeurs des énumérations,
-clés étrangères). Le fichier est évalué par PHP.
+En formats markdown et json, l'option --lang enrichit les commentaires avec le
+fichier langue de kadlib (noms présentés aux utilisateurs, valeurs des
+énumérations, clés étrangères). Le fichier est évalué par PHP.
 
 La base est interrogée avec sqlplus : seule la bibliothèque standard de Python
 est utilisée. Voir README.d/build.md pour les prérequis et l'utilisation.
@@ -33,8 +35,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = {"markdown": ROOT / "build" / "doc" / "resasat-db",
-                  "sql": ROOT / "build" / "sql" / "resasat-db"}
-EXTENSION = {"markdown": ".md", "sql": ".sql"}
+                  "sql": ROOT / "build" / "sql" / "resasat-db",
+                  "json": ROOT / "build" / "json" / "resasat-db"}
+EXTENSION = {"markdown": ".md", "sql": ".sql", "json": ".json"}
 DEFAULT_ORACLE_HOME = "/opt/oracle/product/19c/dbhome_1"
 DEFAULT_USER = "resaora"
 DEFAULT_DSN = "resasat-rhel96:1521/PDB1"
@@ -384,6 +387,8 @@ class Schema:
             self.tables[table]["columns"].append({
                 "name": name,
                 "type": column_type(data_type, length, precision, scale, char_length, char_used),
+                "data_type": data_type, "precision": precision, "scale": scale,
+                "char_length": char_length,
                 "nullable": nullable == "Y",
                 "comment": comment.strip(),
                 "default": defaults.get((table, name), "")})
@@ -827,6 +832,150 @@ def render_sql(schema, ddl_items, origin):
 
 
 # --------------------------------------------------------------------------
+# Format JSON (modèle de données)
+# --------------------------------------------------------------------------
+
+# Au-delà de 9 chiffres, un entier ne tient plus sur 32 bits.
+INT_MAX_DIGITS = 9
+BIGINT_MAX_DIGITS = 18
+AUTO_INCREMENT_SUFFIX = "_AUTO_INC"
+NUMBER_LITERAL = re.compile(r"^[+-]?(\d+(\.\d*)?|\.\d+)$")
+
+
+def json_type(column):
+    """Couple (type, largeur) du modèle de données, None si le type Oracle n'a
+    pas de correspondance."""
+    data_type, precision, scale = column["data_type"], column["precision"], column["scale"]
+    if data_type in ("VARCHAR2", "CHAR", "NVARCHAR2", "NCHAR") and column["char_length"].isdigit():
+        return "varchar", int(column["char_length"])
+    if data_type in ("BINARY_DOUBLE", "BINARY_FLOAT", "FLOAT"):
+        return "double", None
+    if data_type == "NUMBER" and precision.isdigit() and scale in ("", "0"):
+        if int(precision) <= INT_MAX_DIGITS:
+            return "int", None
+        if int(precision) <= BIGINT_MAX_DIGITS:
+            return "bigint", None
+    return None
+
+
+def json_default(text):
+    """Valeur par défaut du modèle de données : couple (valeur, comprise).
+    Seuls NULL, un nombre et une chaîne sont compris."""
+    text = text.strip()
+    while text.startswith("(") and text.endswith(")"):
+        text = text[1:-1].strip()
+    if not text or text.upper() == "NULL":
+        return None, True
+    if NUMBER_LITERAL.match(text):
+        return (int(text) if re.fullmatch(r"[+-]?\d+", text) else float(text)), True
+    if len(text) >= 2 and text[0] == text[-1] == "'" and "'" not in text[1:-1].replace("''", ""):
+        return text[1:-1].replace("''", "'"), True
+    return None, False
+
+
+def auto_increment_column(schema, table):
+    """Colonne alimentée par une séquence : la clé primaire simple d'une table
+    qui porte un déclencheur actif « ..._AUTO_INC » (convention de kadlib)."""
+    primary = schema.constraints_of(table, "P")
+    triggered = any(trigger["enabled"] and trigger["name"].endswith(AUTO_INCREMENT_SUFFIX)
+                    and "INSERT" in trigger["event"]
+                    for trigger in schema.tables[table]["triggers"])
+    if triggered and primary and len(primary[0]["columns"]) == 1:
+        return primary[0]["columns"][0]
+    return None
+
+
+def json_reference(schema, language, table, column):
+    """Clé étrangère d'une colonne : contrainte de la base, sinon fichier langue."""
+    for constraint in schema.constraints_of(table, "R"):
+        target = schema.target_of(constraint)
+        if constraint["columns"] == [column] and target and len(target["columns"]) == 1:
+            return {"table": label(target["table"]), "column": label(target["columns"][0])}
+    target = language.foreign_key(column) if language else None
+    if target:
+        return {"table": label(find_table(schema, target[0])), "column": target[1].lower()}
+    return None
+
+
+def json_indexes(schema, table, warnings):
+    """Index de la table, sans celui de la clé primaire. Une contrainte
+    d'unicité sans index du même contenu devient un index unique."""
+    column_names = {column["name"] for column in schema.tables[table]["columns"]}
+    primary = [(c["name"], c["columns"]) for c in schema.constraints_of(table, "P")]
+    indexes = []
+    for index in schema.tables[table]["indexes"]:
+        columns = [column for column, _ in index["columns"]]
+        if any(index["name"] == name or columns == key for name, key in primary):
+            continue
+        if any(descending for _, descending in index["columns"]) or not set(columns) <= column_names:
+            warnings.append(f"{label(table)} : index {label(index['name'])} ignoré "
+                            "(ordre décroissant ou expression)")
+            continue
+        indexes.append({"name": label(index["name"]), "unique": index["unique"],
+                        "columns": [label(column) for column in columns]})
+    for constraint in schema.constraints_of(table, "U"):
+        columns = [label(column) for column in constraint["columns"]]
+        if not any(index["unique"] and index["columns"] == columns for index in indexes):
+            indexes.append({"name": label(constraint["name"]), "unique": True, "columns": columns})
+    return indexes
+
+
+def render_json_table(schema, table, language, warnings):
+    info = schema.tables[table]
+    auto_increment = auto_increment_column(schema, table)
+    columns = []
+    for column in info["columns"]:
+        name = column["name"]
+        comment = " — ".join(part for part in (
+            language.label(name) if language else "", " ".join(column["comment"].split())) if part)
+        item = {"name": label(name), "comment": comment}
+        mapped = json_type(column)
+        if mapped:
+            item["type"] = mapped[0]
+            if mapped[1] is not None:
+                item["length"] = mapped[1]
+        else:
+            # Pas de conversion silencieuse : tools/create-db.py refusera ce type
+            item["type"] = column["type"]
+            warnings.append(f"{label(table)}.{label(name)} : type {column['type']} "
+                            "sans correspondance dans le modèle de données")
+        default, understood = json_default(column["default"])
+        if not understood:
+            warnings.append(f"{label(table)}.{label(name)} : valeur par défaut "
+                            f"{column['default']} non reprise")
+        item["nullable"] = column["nullable"]
+        item["default"] = default
+        item["auto_increment"] = name == auto_increment
+        reference = json_reference(schema, language, table, name)
+        if reference:
+            item["references"] = reference
+        values = language.enum_values(name) if language else None
+        if values:
+            item["values"] = dict(values)
+        columns.append(item)
+
+    primary = schema.constraints_of(table, "P")
+    table_label = language.table_label(table) if language else ""
+    return {"name": label(table),
+            "comment": " — ".join(part for part in (table_label, " ".join(info["comment"].split()))
+                                  if part),
+            "columns": columns,
+            "primary_key": [label(column) for column in primary[0]["columns"]] if primary else [],
+            "indexes": json_indexes(schema, table, warnings)}
+
+
+def render_json(schema, language=None):
+    """Retourne les fichiers et les avertissements. Le format est celui de
+    datamodel/, décrit dans README.d/database.md."""
+    warnings = []
+    files = {}
+    for table in schema.tables:
+        content = render_json_table(schema, table, language, warnings)
+        files[file_stem(table) + ".json"] = json.dumps(content, ensure_ascii=False, indent=2) + "\n"
+    return files, warnings
+
+
+# --------------------------------------------------------------------------
 # Programme principal
 # --------------------------------------------------------------------------
 
@@ -844,12 +993,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="Exporte le schéma des tables RESASAT_ et de la table USERS "
                     "de la base Oracle de RESASAT.")
-    parser.add_argument("--format", choices=("markdown", "sql"), required=True,
+    parser.add_argument("--format", choices=("markdown", "sql", "json"), required=True,
                         help="markdown : un fichier .md par table ; "
-                             "sql : un fichier .sql (DDL Oracle) par table")
+                             "sql : un fichier .sql (DDL Oracle) par table ; "
+                             "json : un fichier .json par table, au format de datamodel/")
     parser.add_argument("--output", type=Path, metavar="RÉPERTOIRE",
-                        help="répertoire de sortie (défaut : build/doc/resasat-db/ "
-                             "ou build/sql/resasat-db/)")
+                        help="répertoire de sortie (défaut : build/doc/resasat-db/, "
+                             "build/sql/resasat-db/ ou build/json/resasat-db/)")
     parser.add_argument("--user", default=DEFAULT_USER,
                         help=f"utilisateur Oracle (défaut : {DEFAULT_USER})")
     parser.add_argument("--dsn", default=DEFAULT_DSN,
@@ -857,11 +1007,11 @@ def main():
     parser.add_argument("--with-storage", action="store_true",
                         help="format sql : conserver tablespaces et attributs de stockage")
     parser.add_argument("--lang", type=Path, metavar="FICHIER.php",
-                        help="format markdown : fichier langue de kadlib (lang/fr.inc.php) "
+                        help="formats markdown et json : fichier langue de kadlib (lang/fr.inc.php) "
                              "qui enrichit les commentaires des tables et des colonnes")
     args = parser.parse_args()
-    if args.lang and args.format != "markdown":
-        parser.error("--lang ne s'applique qu'au format markdown")
+    if args.lang and args.format == "sql":
+        parser.error("--lang ne s'applique qu'aux formats markdown et json")
 
     password = os.environ.get(PASSWORD_VARIABLE) or getpass.getpass(
         f"Mot de passe de {args.user}@{args.dsn} : ")
@@ -885,6 +1035,10 @@ def main():
         if args.format == "markdown":
             files = render_markdown(schema, origin, language,
                                     args.lang.name if args.lang else None)
+        elif args.format == "json":
+            files, warnings = render_json(schema, language)
+            for warning in warnings:
+                print(f"Avertissement : {warning}", file=sys.stderr)
         else:
             files = render_sql(schema, parse_ddl(sections.get("ddl", "")), origin)
         write_files(output, files, EXTENSION[args.format])

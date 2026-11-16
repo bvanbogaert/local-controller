@@ -1,0 +1,267 @@
+{
+  "name": "resasat_station",
+  "comment": "Station",
+  "columns": [
+    {
+      "name": "resasat_station_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_station_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 20,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_type_fk",
+      "comment": "Type",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station_type",
+        "column": "resasat_station_type_id"
+      }
+    },
+    {
+      "name": "resasat_station_mobile",
+      "comment": "Mobile",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_receiver",
+      "comment": "Récepteur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_transmitter",
+      "comment": "Emetteur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_region_fk",
+      "comment": "Région",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_region",
+        "column": "resasat_region_id"
+      }
+    },
+    {
+      "name": "resasat_station_certificate_1",
+      "comment": "N° qualification France Télécom",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_certificate_2",
+      "comment": "N° qualification Eutelsat",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_certificate_3",
+      "comment": "N° qualification Intelsat",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_phone",
+      "comment": "N° de téléphone",
+      "type": "varchar",
+      "length": 50,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_station_fk",
+      "comment": "Site de rattachement",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station",
+        "column": "resasat_station_id"
+      }
+    },
+    {
+      "name": "resasat_station_carry",
+      "comment": "État de la porteuse",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Eteint",
+        "1": "Allumé",
+        "2": "Indéterminé"
+      }
+    },
+    {
+      "name": "resasat_station_auto",
+      "comment": "Mode de fonctionnement",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Manuel",
+        "1": "Automatique",
+        "2": "Indéterminé"
+      }
+    },
+    {
+      "name": "resasat_station_localisat_nam",
+      "comment": "Nom (Localisation)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_controler_nam",
+      "comment": "Nom (Contrôleur local)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_globecast_nam",
+      "comment": "Nom en réception (Globecast)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_controler_dns",
+      "comment": "Nom Dns (Contrôleur local)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_is_foreign",
+      "comment": "Source étrangère",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Non",
+        "1": "Globecast",
+        "2": "Rainbow"
+      }
+    },
+    {
+      "name": "resasat_station_sorting_key",
+      "comment": "Clef de tri",
+      "type": "varchar",
+      "length": 5,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_start",
+      "comment": "Début",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_end",
+      "comment": "Fin",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_version",
+      "comment": "Version",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_globecast_eid",
+      "comment": "Nom en émission (Globecast)",
+      "type": "varchar",
+      "length": 5,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_station_ip",
+      "comment": "Adresse IP",
+      "type": "varchar",
+      "length": 45,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_station_id"
+  ],
+  "indexes": [
+    {
+      "name": "idx_resasat_station_id_name",
+      "unique": false,
+      "columns": [
+        "resasat_station_id",
+        "resasat_station_name"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "name": "resasat_satelite",
+  "comment": "Satellite",
+  "columns": [
+    {
+      "name": "resasat_satelite_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_satelite_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_position",
+      "comment": "Position (°)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_balise_h",
+      "comment": "Balise H (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_balise_v",
+      "comment": "Balise V (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_controler_na",
+      "comment": "Nom (Contrôleur local)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_rainbow_name",
+      "comment": "Nom (Rainbow)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_start",
+      "comment": "Début",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_satelite_end",
+      "comment": "Fin",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_satelite_id"
+  ],
+  "indexes": []
+}

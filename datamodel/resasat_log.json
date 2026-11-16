@@ -1,0 +1,129 @@
+{
+  "name": "resasat_log",
+  "comment": "Reservation logs",
+  "columns": [
+    {
+      "name": "resasat_log_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_log_reservation_fk",
+      "comment": "Reservation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_log_date",
+      "comment": "Date",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_log_user_fk",
+      "comment": "Utilisateur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "resasat_log_type",
+      "comment": "Type",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Ajouter une station",
+        "1": "Retirer une station",
+        "2": "Création",
+        "3": "Annulation",
+        "4": "Changement période",
+        "5": "Changement attribut",
+        "6": "Changement attribut slot"
+      }
+    },
+    {
+      "name": "resasat_log_points",
+      "comment": "Points",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_log_confirm",
+      "comment": "Acquitté",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_log_confirm_reason",
+      "comment": "Raison",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Annulation en l'absence de confirmation",
+        "1": "Modification par un autre utilisateur",
+        "2": "Annulation en l'absence de confirmation",
+        "3": "Annulation par un autre utilisateur"
+      }
+    },
+    {
+      "name": "resasat_log_confirm_date",
+      "comment": "Acquitté le",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_log_confirm_user_fk",
+      "comment": "Acquitté par",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "resasat_log_station_fk",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_log_id"
+  ],
+  "indexes": [
+    {
+      "name": "fk_resasat_log_reservation",
+      "unique": false,
+      "columns": [
+        "resasat_log_reservation_fk"
+      ]
+    }
+  ]
+}

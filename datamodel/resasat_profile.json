@@ -1,0 +1,255 @@
+{
+  "name": "resasat_profile",
+  "comment": "Profil",
+  "columns": [
+    {
+      "name": "resasat_profile_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_profile_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_start",
+      "comment": "Début",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_end",
+      "comment": "Fin",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_payload_bandwi",
+      "comment": "Débit utile vidéo (kbit/s)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_symbole_bandwi",
+      "comment": "Débits symboles (mSymb/s)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_fec",
+      "comment": "FEC",
+      "type": "varchar",
+      "length": 5,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "1/2": "1/2",
+        "2/3": "2/3",
+        "3/4": "3/4",
+        "4/5": "4/5",
+        "5/6": "5/6",
+        "6/7": "6/7",
+        "7/8": "7/8"
+      }
+    },
+    {
+      "name": "resasat_profile_norm",
+      "comment": "Standard de modulation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "DVB",
+        "1": "DVB S2"
+      }
+    },
+    {
+      "name": "resasat_profile_modulation",
+      "comment": "Type de modulation",
+      "type": "varchar",
+      "length": 5,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "QPSK": "QPSK",
+        "8PSK": "8PSK",
+        "16QAM": "16QAM"
+      }
+    },
+    {
+      "name": "resasat_profile_red_line_up_le",
+      "comment": "Red Line Up Level",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_eirp",
+      "comment": "EIRP",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_vid_cod_std",
+      "comment": "Video coding standard",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "MPEG2": "Mpeg2",
+        "MPEG4 AVC": "Mpeg4 AVC"
+      }
+    },
+    {
+      "name": "resasat_profile_cod_format",
+      "comment": "Coding format",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "4:2:0": "4:2:0",
+        "4:2:2": "4:2:2"
+      }
+    },
+    {
+      "name": "resasat_profile_dvbs2framsize",
+      "comment": "DVB S2 Frame size",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "Normal": "Normal",
+        "Short": "Short"
+      }
+    },
+    {
+      "name": "resasat_profile_dvbs2pilins",
+      "comment": "DVB S2 Pilot insertion",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_rollofffactor",
+      "comment": "Rolloff factor",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "20": "20%",
+        "25": "25%",
+        "30": "30%",
+        "35": "35%"
+      }
+    },
+    {
+      "name": "resasat_profile_dest_eirp",
+      "comment": "Destination EIRP",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_source_eirp",
+      "comment": "Source EIRP",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_history_id",
+      "comment": "History",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_validation",
+      "comment": "Validation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Nouveau",
+        "1": "Accepté",
+        "2": "Rejeté"
+      }
+    },
+    {
+      "name": "resasat_profile_is_foreign",
+      "comment": "Source étrangère",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Non",
+        "1": "Globecast",
+        "2": "Rainbow"
+      }
+    },
+    {
+      "name": "resasat_profile_videobr_2",
+      "comment": "Video bit rate (2 audio)",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_profile_videobr_4",
+      "comment": "Video bit rate (4 audio)",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_profile_id"
+  ],
+  "indexes": []
+}

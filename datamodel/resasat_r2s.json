@@ -1,0 +1,47 @@
+{
+  "name": "resasat_r2s",
+  "comment": "Liens Réservation-Station",
+  "columns": [
+    {
+      "name": "resasat_r2s_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_r2s_reservation_fk",
+      "comment": "Réservation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_r2s_station_fk",
+      "comment": "Station",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station",
+        "column": "resasat_station_id"
+      }
+    }
+  ],
+  "primary_key": [
+    "resasat_r2s_id"
+  ],
+  "indexes": [
+    {
+      "name": "idx_resasat_r2s_reservation_fk",
+      "unique": false,
+      "columns": [
+        "resasat_r2s_reservation_fk",
+        "resasat_r2s_station_fk"
+      ]
+    }
+  ]
+}

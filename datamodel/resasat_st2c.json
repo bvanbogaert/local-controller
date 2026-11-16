@@ -1,0 +1,42 @@
+{
+  "name": "resasat_st2c",
+  "comment": "Slots supportés par type de station",
+  "columns": [
+    {
+      "name": "resasat_st2c_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_st2c_station_type_fk",
+      "comment": "Type de station",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station_type",
+        "column": "resasat_station_type_id"
+      }
+    },
+    {
+      "name": "resasat_st2c_channel_fk",
+      "comment": "Slot",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_channel",
+        "column": "resasat_channel_id"
+      }
+    }
+  ],
+  "primary_key": [
+    "resasat_st2c_id"
+  ],
+  "indexes": []
+}

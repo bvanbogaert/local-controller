@@ -1,0 +1,36 @@
+{
+  "name": "resasat_region",
+  "comment": "Région",
+  "columns": [
+    {
+      "name": "resasat_region_id",
+      "comment": "Id",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_region_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 15,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_region_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_region_id"
+  ],
+  "indexes": []
+}

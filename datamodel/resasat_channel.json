@@ -1,0 +1,278 @@
+{
+  "name": "resasat_channel",
+  "comment": "Slot",
+  "columns": [
+    {
+      "name": "resasat_channel_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_channel_name",
+      "comment": "Nom",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_description",
+      "comment": "Description",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_start",
+      "comment": "Début",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_end",
+      "comment": "Fin",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_permanent",
+      "comment": "Permanent",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_satelite_fk",
+      "comment": "Satellite",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_satelite",
+        "column": "resasat_satelite_id"
+      }
+    },
+    {
+      "name": "resasat_channel_operator_fk",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_polarisation",
+      "comment": "Polarisation Tx",
+      "type": "varchar",
+      "length": 1,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "H": "Horizontale (X)",
+        "V": "Verticale (Y)"
+      }
+    },
+    {
+      "name": "resasat_channel_video_rx_frequ",
+      "comment": "Down Freq (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_video_tx_frequ",
+      "comment": "Up Freq (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_order_uplink_o",
+      "comment": "Ordres Up Freq Origine (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_order_down_ori",
+      "comment": "Ordres Down Freq Origine (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_order_uplink_r",
+      "comment": "Ordres Up Freq Destination (mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_order_down_rec",
+      "comment": "Ordres Down Freq Destinat.(mHz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_user_fk",
+      "comment": "Utilisateur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "resasat_channel_globecast_nam",
+      "comment": "Nom (Globecast)",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_do_present",
+      "comment": "Porteuse d'ordre présente",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_replicat_fk",
+      "comment": "Réplicat",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_replicat",
+        "column": "resasat_replicat_id"
+      }
+    },
+    {
+      "name": "resasat_channel_preference",
+      "comment": "Préférence",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_bandwidth",
+      "comment": "Taille du slot (Mhz)",
+      "type": "double",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_profile_fk",
+      "comment": "Profil",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_profile",
+        "column": "resasat_profile_id"
+      }
+    },
+    {
+      "name": "resasat_channel_is_special",
+      "comment": "Special",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_history_id",
+      "comment": "Lien historique",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_validation",
+      "comment": "Validation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Nouveau",
+        "1": "Accepté",
+        "2": "Rejeté"
+      }
+    },
+    {
+      "name": "resasat_channel_is_foreign",
+      "comment": "Source étrangère",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Non",
+        "1": "Globecast",
+        "2": "Rainbow"
+      }
+    },
+    {
+      "name": "resasat_channel_is_nodal",
+      "comment": "Agrégat",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_slot",
+      "comment": "Slot",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_channel_transpondeur",
+      "comment": "Transpondeur",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_channel_id"
+  ],
+  "indexes": []
+}

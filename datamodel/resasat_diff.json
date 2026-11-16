@@ -1,0 +1,70 @@
+{
+  "name": "resasat_diff",
+  "comment": "Différences",
+  "columns": [
+    {
+      "name": "resasat_diff_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_diff_log_fk",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_diff_type",
+      "comment": "Type",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Ajouter une station",
+        "1": "Retirer une station",
+        "2": "Création",
+        "3": "Annulation",
+        "4": "Changement période",
+        "5": "Changement attribut",
+        "6": "Changement attribut slot"
+      }
+    },
+    {
+      "name": "resasat_diff_field_name",
+      "comment": "",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_diff_old_value",
+      "comment": "Ancien",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_diff_new_value",
+      "comment": "Nouveau",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_diff_id"
+  ],
+  "indexes": []
+}

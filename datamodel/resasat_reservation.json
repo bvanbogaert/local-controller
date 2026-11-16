@@ -1,0 +1,359 @@
+{
+  "name": "resasat_reservation",
+  "comment": "Réservation",
+  "columns": [
+    {
+      "name": "resasat_reservation_id",
+      "comment": "Index",
+      "type": "int",
+      "nullable": false,
+      "default": null,
+      "auto_increment": true
+    },
+    {
+      "name": "resasat_reservation_title",
+      "comment": "Titre",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_descriptio",
+      "comment": "",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_product_co",
+      "comment": "",
+      "type": "varchar",
+      "length": 10,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_localisati",
+      "comment": "Emplacement",
+      "type": "varchar",
+      "length": 255,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_start",
+      "comment": "Début",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_end",
+      "comment": "Fin",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_emiter_fk",
+      "comment": "Emetteur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station",
+        "column": "resasat_station_id"
+      }
+    },
+    {
+      "name": "resasat_reservation_channel_fk",
+      "comment": "Slot",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_channel",
+        "column": "resasat_channel_id"
+      }
+    },
+    {
+      "name": "resasat_reservation_receiver_f",
+      "comment": "Donneur d'ordre",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_station",
+        "column": "resasat_station_id"
+      }
+    },
+    {
+      "name": "resasat_reservation_amendment",
+      "comment": "Amendement",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_ird",
+      "comment": "Nombre d'IRD",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4"
+      }
+    },
+    {
+      "name": "resasat_reservation_user_fk",
+      "comment": "Utilisateur",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "resasat_reservation_state",
+      "comment": "État",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Modifiée",
+        "1": "Transmise",
+        "2": "Problème",
+        "3": "Acquitée",
+        "4": "Manuel",
+        "5": "NA",
+        "6": "Refusé"
+      }
+    },
+    {
+      "name": "resasat_reservation_deleted",
+      "comment": "Annulé",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_day_id",
+      "comment": "Clef unique journalière",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_is_auto",
+      "comment": "Automatic",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Manuel",
+        "1": "Automatique"
+      }
+    },
+    {
+      "name": "resasat_reservation_is_foreign",
+      "comment": "Source étrangère",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Non",
+        "1": "Globecast",
+        "2": "Rainbow"
+      }
+    },
+    {
+      "name": "resasat_reservation_tm_fk",
+      "comment": "Mode de transmission",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "resasat_trans_mode",
+        "column": "resasat_trans_mode_id"
+      }
+    },
+    {
+      "name": "resasat_reservation_do",
+      "comment": "Porteuse d'ordre",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_is_special",
+      "comment": "Special",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_contact",
+      "comment": "Contact",
+      "type": "varchar",
+      "length": 50,
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_confirm",
+      "comment": "Confirmation",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "0": "Nouveau",
+        "1": "En attente de confirmation",
+        "2": "Confirmé",
+        "3": "Non applicable",
+        "4": "Expiré",
+        "5": "Annulé"
+      }
+    },
+    {
+      "name": "resasat_reservation_confirm_ex",
+      "comment": "Expiration",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_confirm_da",
+      "comment": "Date de la confirmation",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_confirm_us",
+      "comment": "Confirmé par",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "references": {
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "resasat_reservation_recurrence",
+      "comment": "Récurrence",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_audio",
+      "comment": "Nombre d'audio",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false,
+      "values": {
+        "2": "2",
+        "4": "4"
+      }
+    },
+    {
+      "name": "resasat_reservation_analyser",
+      "comment": "Analyseur de spectre",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_problem",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_problem_da",
+      "comment": "",
+      "type": "bigint",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_problem_us",
+      "comment": "",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    },
+    {
+      "name": "resasat_reservation_test",
+      "comment": "Réservation de test",
+      "type": "int",
+      "nullable": true,
+      "default": null,
+      "auto_increment": false
+    }
+  ],
+  "primary_key": [
+    "resasat_reservation_id"
+  ],
+  "indexes": [
+    {
+      "name": "idx_resasat_reservation",
+      "unique": false,
+      "columns": [
+        "resasat_reservation_is_foreign",
+        "resasat_reservation_deleted",
+        "resasat_reservation_state",
+        "resasat_reservation_problem"
+      ]
+    },
+    {
+      "name": "idx_resasat_reservation_start",
+      "unique": false,
+      "columns": [
+        "resasat_reservation_start",
+        "resasat_reservation_end",
+        "resasat_reservation_id"
+      ]
+    }
+  ]
+}
