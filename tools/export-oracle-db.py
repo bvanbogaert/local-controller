@@ -1,7 +1,8 @@
 #!/usr/bin/env python3.11
 """Exporte le schéma de la base de données Oracle de RESASAT.
 
-Seules les tables dont le nom commence par RESASAT_ sont exportées, dans l'un
+Les tables dont le nom commence par RESASAT_, et la table USERS que beaucoup
+d'entre elles référencent, sont exportées dans l'un
 des deux formats :
 
 * markdown : un fichier .md par table, plus index.md, dans build/doc/resasat-db/ ;
@@ -43,8 +44,19 @@ TIMEOUT_S = 300
 SECTION_MARK = "@@@section "
 DDL_MARK = "@@@ddl "
 
-# Filtres SQL sur le préfixe des objets exportés
-TABLE_FILTER = r"table_name LIKE 'RESASAT\_%' ESCAPE '\'"
+# Tables exportées en plus de celles qui portent le préfixe RESASAT_
+EXTRA_TABLES = ("USERS",)
+
+
+def table_filter(alias=""):
+    """Condition SQL sur les tables exportées ; alias vaut par exemple « t. »."""
+    extra = ", ".join(f"'{table}'" for table in EXTRA_TABLES)
+    return (rf"({alias}table_name LIKE 'RESASAT\_%' ESCAPE '\'"
+            f" OR {alias}table_name IN ({extra}))")
+
+
+# Filtres SQL sur les objets exportés
+TABLE_FILTER = table_filter()
 SEQUENCE_FILTER = r"sequence_name LIKE 'RESASAT\_%' ESCAPE '\'"
 
 SQL_HEADER = """\
@@ -61,7 +73,7 @@ DICTIONARY_QUERIES = {
 SELECT t.table_name, c.comments
   FROM user_tables t
   LEFT JOIN user_tab_comments c ON c.table_name = t.table_name
- WHERE t.{TABLE_FILTER}
+ WHERE {table_filter('t.')}
  ORDER BY t.table_name;""",
     "columns": f"""
 SELECT c.table_name, c.column_name, c.data_type, c.data_length, c.data_precision,
@@ -69,7 +81,7 @@ SELECT c.table_name, c.column_name, c.data_type, c.data_length, c.data_precision
        (SELECT m.comments FROM user_col_comments m
          WHERE m.table_name = c.table_name AND m.column_name = c.column_name)
   FROM user_tab_columns c
- WHERE c.{TABLE_FILTER}
+ WHERE {table_filter('c.')}
  ORDER BY c.table_name, c.column_id;""",
     # DATA_DEFAULT est de type LONG, que le mode CSV de sqlplus ne sait pas
     # protéger : il est converti en VARCHAR2 par un passage en XML.
@@ -82,7 +94,7 @@ SELECT x.table_name, x.column_name, x.data_default
        COLUMNS table_name VARCHAR2(128), column_name VARCHAR2(128),
                data_default VARCHAR2(4000)) x;""",
     # Toutes les contraintes du schéma : une clé étrangère peut viser, ou venir
-    # d'une table qui n'a pas le préfixe RESASAT_.
+    # d'une table qui n'est pas exportée.
     "constraints": """
 SELECT constraint_name, table_name, constraint_type, status, r_owner,
        r_constraint_name, delete_rule, search_condition_vc
@@ -128,7 +140,7 @@ SELECT '{DDL_MARK}TABLE ' || table_name || ' ' || table_name || CHR(10)
 SELECT '{DDL_MARK}INDEX ' || i.table_name || ' ' || i.index_name || CHR(10)
        || DBMS_METADATA.GET_DDL('INDEX', i.index_name)
   FROM user_indexes i
- WHERE i.{TABLE_FILTER} AND i.index_type <> 'LOB'
+ WHERE {table_filter('i.')} AND i.index_type <> 'LOB'
    AND NOT EXISTS (SELECT 1 FROM user_constraints c
                     WHERE c.index_name = i.index_name
                       AND c.constraint_type IN ('P', 'U'))
@@ -356,7 +368,7 @@ def column_type(data_type, length, precision, scale, char_length, char_used):
 
 
 class Schema:
-    """Tables RESASAT_ et objets associés, lus dans les sections CSV."""
+    """Tables exportées et objets associés, lus dans les sections CSV."""
 
     def __init__(self, sections):
         rows = {name: parse_csv(sections.get(name, "")) for name in DICTIONARY_QUERIES}
@@ -543,6 +555,45 @@ def find_table(schema, name):
     return next((table for table in schema.tables if table.lower() == name.lower()), name)
 
 
+ORIGIN_DATABASE = "base"
+ORIGIN_LANGUAGE = "fichier langue"
+ORIGIN_BOTH = "base et fichier langue"
+
+
+def declared_foreign_keys(schema, language):
+    """Clés étrangères que le fichier langue déclare sur les colonnes exportées."""
+    declared = []
+    if language:
+        for table, info in schema.tables.items():
+            for column in info["columns"]:
+                target = language.foreign_key(column["name"])
+                if target:
+                    declared.append({"table": table, "column": column["name"],
+                                     "target_table": find_table(schema, target[0]),
+                                     "target_column": target[1]})
+    return declared
+
+
+def same_foreign_key(schema, constraint, declared):
+    """Vrai si la contrainte de la base et la déclaration du fichier langue
+    relient la même colonne à la même table."""
+    target = schema.target_of(constraint)
+    return (target is not None
+            and constraint["table"] == declared["table"]
+            and constraint["columns"] == [declared["column"]]
+            and target["table"].lower() == declared["target_table"].lower())
+
+
+def split_by_origin(schema, constraints, declared):
+    """Retourne les couples (contrainte, origine), puis les déclarations du
+    fichier langue qu'aucune contrainte de la base ne reprend."""
+    with_origin = [(c, ORIGIN_BOTH if any(same_foreign_key(schema, c, d) for d in declared)
+                    else ORIGIN_DATABASE) for c in constraints]
+    only_declared = [d for d in declared
+                     if not any(same_foreign_key(schema, c, d) for c in constraints)]
+    return with_origin, only_declared
+
+
 def enum_title(column):
     return f"Valeurs de {label(column)}"
 
@@ -610,10 +661,17 @@ def render_markdown_table(schema, table, language=None):
         parts.append("\n".join(f"* {code(label(c['name']))} : {code(c['condition'])}"
                                for c in checks))
 
-    foreign_keys = schema.constraints_of(table, "R")
-    if foreign_keys:
+    # Avec un fichier langue, les clés étrangères qu'il déclare complètent les
+    # contraintes de la base ; la colonne « Origine » les distingue.
+    all_declared = declared_foreign_keys(schema, language)
+    origin_header = ["Origine"] if language else []
+
+    foreign_keys, declared = split_by_origin(
+        schema, schema.constraints_of(table, "R"),
+        [d for d in all_declared if d["table"] == table])
+    if foreign_keys or declared:
         rows = []
-        for foreign_key in foreign_keys:
+        for foreign_key, origin in foreign_keys:
             target = schema.target_of(foreign_key)
             if target:
                 target_table = table_link(schema, target["table"])
@@ -623,19 +681,25 @@ def render_markdown_table(schema, table, language=None):
                 target_columns = ""
             rows.append([code(label(foreign_key["name"])), names(foreign_key["columns"]),
                          target_table, target_columns, code(foreign_key["delete_rule"]),
-                         yes_no(foreign_key["enabled"])])
+                         yes_no(foreign_key["enabled"])] + ([origin] if language else []))
+        for d in declared:
+            rows.append(["", code(label(d["column"])), table_link(schema, d["target_table"]),
+                         code(label(d["target_column"])), "", "", ORIGIN_LANGUAGE])
         parts.append("## Clés étrangères")
         parts.append(markdown_table(
             ["Contrainte", "Colonnes", "Table référencée", "Colonnes référencées",
-             "À la suppression", "Active"], rows))
+             "À la suppression", "Active"] + origin_header, rows))
 
-    referencing = schema.referencing(table)
-    if referencing:
+    referencing, declared = split_by_origin(
+        schema, schema.referencing(table),
+        [d for d in all_declared if d["target_table"] == table])
+    if referencing or declared:
+        rows = [[table_link(schema, c["table"]), code(label(c["name"])), names(c["columns"])]
+                + ([origin] if language else []) for c, origin in referencing]
+        rows += [[table_link(schema, d["table"]), "", code(label(d["column"])), ORIGIN_LANGUAGE]
+                 for d in declared]
         parts.append("## Référencée par")
-        parts.append(markdown_table(
-            ["Table", "Contrainte", "Colonnes"],
-            [[table_link(schema, c["table"]), code(label(c["name"])), names(c["columns"])]
-             for c in referencing]))
+        parts.append(markdown_table(["Table", "Contrainte", "Colonnes"] + origin_header, rows))
 
     if info["indexes"]:
         parts.append("## Index")
@@ -671,7 +735,7 @@ def table_comment(language, table, info):
 def render_markdown_index(schema, origin, language=None, language_file=None):
     introduction = (f"Schéma extrait de `{origin}` le {datetime.date.today().isoformat()} "
                     "par *tools/export-oracle-db.py*. Seules les tables dont le nom commence "
-                    "par `resasat_` sont décrites.")
+                    "par `resasat_` et la table `users` sont décrites.")
     if language:
         introduction += (" Les noms présentés aux utilisateurs (en gras), les valeurs des "
                          "énumérations et les clés étrangères des commentaires viennent du "
@@ -778,7 +842,8 @@ def write_files(directory, files, extension):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Exporte le schéma des tables RESASAT_ de la base Oracle de RESASAT.")
+        description="Exporte le schéma des tables RESASAT_ et de la table USERS "
+                    "de la base Oracle de RESASAT.")
     parser.add_argument("--format", choices=("markdown", "sql"), required=True,
                         help="markdown : un fichier .md par table ; "
                              "sql : un fichier .sql (DDL Oracle) par table")
@@ -816,7 +881,7 @@ def main():
         sections = split_sections(run_sqlplus(args.user, args.dsn, password, script))
         schema = Schema(sections)
         if not schema.tables:
-            raise ExportError(f"aucune table RESASAT_ dans le schéma {origin}")
+            raise ExportError(f"aucune table à exporter dans le schéma {origin}")
         if args.format == "markdown":
             files = render_markdown(schema, origin, language,
                                     args.lang.name if args.lang else None)

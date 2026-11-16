@@ -179,9 +179,16 @@ class ScriptTest(unittest.TestCase):
         script = tool.build_script(with_ddl=True, with_storage=True)
         self.assertIn("'SEGMENT_ATTRIBUTES', TRUE", script)
 
-    def test_only_prefixed_objects(self):
+    def test_exported_tables(self):
         script = tool.build_script(with_ddl=True, with_storage=False)
-        self.assertIn(r"LIKE 'RESASAT\_%' ESCAPE '\'", script)
+        # Préfixe RESASAT_, plus la table USERS
+        self.assertIn(r"(table_name LIKE 'RESASAT\_%' ESCAPE '\' OR table_name IN ('USERS'))",
+                      script)
+        self.assertIn(r"(t.table_name LIKE 'RESASAT\_%' ESCAPE '\' OR t.table_name IN ('USERS'))",
+                      script)
+        # Chaque requête sur les tables porte le filtre complet
+        self.assertEqual(script.count("LIKE 'RESASAT"), script.count("IN ('USERS')")
+                         + script.count("sequence_name LIKE"))
 
 
 class ParsingTest(unittest.TestCase):
@@ -418,11 +425,12 @@ class DatabaseTest(unittest.TestCase):
         files = sorted(p.name for p in self.output.iterdir())
         self.assertEqual(len(files), tables + 1)
         self.assertIn("index.md", files)
+        self.assertIn("users.md", files)
         pages = [name for name in files if name != "index.md"]
         index = (self.output / "index.md").read_text(encoding="utf-8")
         for name in pages:
             with self.subTest(file=name):
-                self.assertRegex(name, r"^resasat_[a-z0-9_$#]+\.md$")
+                self.assertRegex(name, r"^(resasat_[a-z0-9_$#]+|users)\.md$")
                 self.assertIn(f"]({name})", index)
                 content = (self.output / name).read_text(encoding="utf-8")
                 self.assertTrue(content.startswith(f"# {name[:-3]}\n"))
@@ -454,15 +462,16 @@ class DatabaseTest(unittest.TestCase):
 
     def test_sql_with_storage(self):
         self.assert_exported(self.export("--format", "sql", "--with-storage"))
-        contents = "".join(p.read_text(encoding="utf-8") for p in self.output.glob("resasat_*.sql"))
+        contents = "".join(p.read_text(encoding="utf-8") for p in self.output.glob("*.sql"))
         self.assertIn("TABLESPACE", contents)
 
     def test_same_tables_in_both_formats(self):
         self.assert_exported(self.export("--format", "markdown"))
         self.assert_exported(self.export("--format", "sql"))
-        markdown = {p.stem for p in self.output.glob("resasat_*.md")}
-        sql = {p.stem for p in self.output.glob("resasat_*.sql")}
+        markdown = {p.stem for p in self.output.glob("*.md")} - {"index"}
+        sql = {p.stem for p in self.output.glob("*.sql")} - {"_sequences"}
         self.assertEqual(markdown, sql)
+        self.assertIn("users", sql)
 
     def test_wrong_password_keeps_existing_files(self):
         # Une seule tentative : le compte Oracle se verrouille après plusieurs échecs.
@@ -489,7 +498,9 @@ class LanguageTest(unittest.TestCase):
                     "resasat_channel_station_fk": "Station",
                     "resasat_channel_owner_fk": "Utilisateur",
                     "resasat_station_id": "&Eacute;tat | validation"},
-            masks={"resasat_channel_id": ["AUTO"],
+            # RESASAT_CHANNEL_ID : clé étrangère du fichier langue, sans contrainte dans la base
+            masks={"resasat_channel_id": ["FKNOLIST", "resasat_station", "resasat_station_id",
+                                          "resasat_station_name"],
                    "resasat_channel_name": ["TEXT", "maxlength=15 size=15"],
                    "resasat_channel_station_fk": ["FKORNULL", "resasat_station",
                                                   "resasat_station_id", "resasat_station_name"],
@@ -525,7 +536,8 @@ class LanguageTest(unittest.TestCase):
     def test_column_comments(self):
         page = self.files["resasat_channel.md"]
         # Nom présenté aux utilisateurs, puis commentaire de la base
-        self.assertIn("| non |  | **Index** — Identifiant sur deux lignes |", page)
+        self.assertIn("| non |  | **Index** — Clé étrangère vers `resasat_station_id` de "
+                      "[resasat_station](resasat_station.md) — Identifiant sur deux lignes |", page)
         self.assertIn("| `'sans nom'` | **Nom abrégé** — L'intitulé |", page)
         # Clé étrangère vers une table exportée : lien ; vers une autre table : texte
         self.assertIn("| **Station** — Clé étrangère vers `resasat_station_id` de "
@@ -547,6 +559,37 @@ class LanguageTest(unittest.TestCase):
         self.assertLess(page.index("## Valeurs de"), page.index("## Clé primaire"))
         self.assertEqual(len(re.findall(r"^# ", page, re.MULTILINE)), 1)
 
+    def test_foreign_keys_section(self):
+        page = self.files["resasat_channel.md"]
+        self.assertIn("| Contrainte | Colonnes | Table référencée | Colonnes référencées | "
+                      "À la suppression | Active | Origine |", page)
+        # Contrainte de la base que le fichier langue déclare aussi : une seule ligne
+        self.assertIn("| `resasat_channel_station_fk` | `resasat_channel_station_fk` | "
+                      "[resasat_station](resasat_station.md) | `resasat_station_id` | "
+                      "`CASCADE` | oui | base et fichier langue |", page)
+        self.assertIn("| `resasat_channel_owner_fk` | `resasat_channel_owner_fk` | "
+                      "users | `id` | `NO ACTION` | non | base et fichier langue |", page)
+        # Clé étrangère connue du seul fichier langue
+        self.assertIn("|  | `resasat_channel_id` | [resasat_station](resasat_station.md) | "
+                      "`resasat_station_id` |  |  | fichier langue |", page)
+        section = page[page.index("## Clés étrangères"):page.index("## Index")]
+        self.assertEqual(section.count("resasat_station.md"), 2)
+
+    def test_referenced_by_section(self):
+        page = self.files["resasat_station.md"]
+        self.assertIn("| Table | Contrainte | Colonnes | Origine |", page)
+        self.assertIn("| [resasat_channel](resasat_channel.md) | `resasat_channel_station_fk` | "
+                      "`resasat_channel_station_fk` | base et fichier langue |", page)
+        self.assertIn("| [resasat_channel](resasat_channel.md) |  | `resasat_channel_id` | "
+                      "fichier langue |", page)
+        self.assertNotIn("## Clés étrangères", page)
+
+    def test_database_only_foreign_key(self):
+        language = tool.Language({}, {})
+        page = tool.render_markdown(self.schema, "resaora@essai", language)["resasat_channel.md"]
+        self.assertIn("`CASCADE` | oui | base |", page)
+        self.assertNotIn("fichier langue |", page)
+
     def test_index(self):
         index = self.files["index.md"]
         self.assertIn("fichier langue `fr.inc.php`", index)
@@ -556,13 +599,11 @@ class LanguageTest(unittest.TestCase):
 
     def test_without_language_file_nothing_changes(self):
         plain = tool.render_markdown(self.schema, "resaora@essai")
-        empty = tool.render_markdown(self.schema, "resaora@essai", tool.Language({}, {}))
         for name, content in plain.items():
             with self.subTest(file=name):
                 self.assertNotIn("**", content)
                 self.assertNotIn("fichier langue", content)
-                if name != "index.md":
-                    self.assertEqual(content, empty[name])
+                self.assertNotIn("Origine", content)
 
 
 @unittest.skipUnless(shutil.which("php"), "php absent")

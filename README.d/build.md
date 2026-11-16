@@ -61,7 +61,7 @@ Les tests ne jugent pas la mise en page : après une modification de la feuille 
 
 ## Export du schéma de la base RESASAT
 
-L'outil en python *tools/export-oracle-db.py* extrait le schéma de la base de données Oracle de RESASAT. Seules les tables dont le nom commence par `resasat_` sont exportées. L'option *--format* choisit la sortie :
+L'outil en python *tools/export-oracle-db.py* extrait le schéma de la base de données Oracle de RESASAT. Les tables dont le nom commence par `resasat_` sont exportées, ainsi que la table `users` de PHProjekt, que beaucoup d'entre elles référencent. L'option *--format* choisit la sortie :
 * *markdown* : un fichier *.md* par table dans *build/doc/resasat-db/*, plus *index.md* qui liste les tables et les séquences. Chaque fichier décrit les colonnes, les clés, les contraintes, les index et les déclencheurs ; les clés étrangères renvoient vers le fichier de la table référencée.
 * *sql* : un fichier *.sql* par table dans *build/sql/resasat-db/*, en DDL natif Oracle 19c produit par `DBMS_METADATA`, plus *_sequences.sql* pour les séquences. Chaque fichier contient la table, ses index, ses clés étrangères, ses déclencheurs et ses commentaires.
 
@@ -99,7 +99,8 @@ Avec l'option *--lang*, l'outil ajoute :
 * au commentaire de la table, dans sa page et dans *index.md* : le nom présenté aux utilisateurs. Il vient de la variable qui porte le nom de la table (`$resasat_channel`) ou, à défaut, de son pluriel (`$resasat_amendments`) ;
 * au commentaire de la colonne, en gras : le nom présenté aux utilisateurs (`$resasat_channel_name`) ;
 * pour une colonne énumérée (masque `ENUM` ou `ENUMORNULL`) : les valeurs et leur signification. Au-delà de 10 valeurs, elles sont dans une section « Valeurs de … » à la suite du tableau des colonnes ;
-* pour une clé étrangère (masque `FK`, `FKORNULL` ou `FKNOLIST`) : la colonne et la table visées, avec un lien si la table est exportée.
+* pour une clé étrangère (masque `FK`, `FKORNULL` ou `FKNOLIST`) : la colonne et la table visées, avec un lien si la table est exportée ;
+* dans les sections « Clés étrangères » et « Référencée par » : les clés étrangères du fichier langue, à la suite des contraintes de la base. Une colonne « Origine » indique d'où vient chaque ligne : *base*, *fichier langue*, ou *base et fichier langue* quand les deux relient la même colonne à la même table.
 
 Le commentaire enregistré dans la base, s'il existe, reste à la fin.
 
@@ -120,7 +121,7 @@ Une première série se passe de la base : elle part d'une sortie de `sqlplus` �
 * le contenu des fichiers SQL : ordre des objets, tables à créer avant, apostrophes des commentaires ;
 * la suppression des fichiers qui ne correspondent plus à une table ;
 * les erreurs de la ligne de commande (format absent ou inconnu, `sqlplus` introuvable, *--lang* avec le format *sql*, fichier langue introuvable) ;
-* l'enrichissement par le fichier langue : noms des tables et des colonnes, énumérations courtes et longues, clés étrangères, et l'absence de changement sans l'option *--lang* ;
+* l'enrichissement par le fichier langue : noms des tables et des colonnes, énumérations courtes et longues, clés étrangères dans les commentaires et dans les sections « Clés étrangères » et « Référencée par », et l'absence de changement sans l'option *--lang* ;
 * la lecture par `php` du fichier langue d'essai de *tests/tools/fixtures/kadlib/* : constantes connues et inconnues, entités HTML. Ces tests sont sautés si `php` est absent.
 
 Une seconde série lance l'outil sur la base RESASAT. Elle est sautée si la variable `RESASAT_PASSWORD` ou `sqlplus` sont absents. Elle vérifie :
