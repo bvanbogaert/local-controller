@@ -1,6 +1,47 @@
 # Fabrication
 
-À compléter.
+## Environnement de développement
+
+### Prérequis
+
+* Python 3.11 et son environnement virtuel *.venv/*, pour le backend et les outils :
+
+```
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+* Node.js 24 et `npm`, pour construire le frontend :
+
+```
+sudo dnf module install nodejs:24
+```
+
+*requirements.txt* fixe les versions de `duckdb`, `fastapi`, `uvicorn`, `python-multipart` et `httpx2` (ce dernier pour les tests). Les versions des paquets du frontend sont fixées par *frontend/package-lock.json*. Les deux installations demandent un accès à PyPI et au registre npm.
+
+### Construction et lancement
+
+```
+.venv/bin/python tools/create-db.py
+cd frontend && npm install && npm run build && cd ..
+.venv/bin/uvicorn --app-dir backend local_controller.main:app --host 0.0.0.0 --port 8000
+```
+
+* *tools/create-db.py* crée ou met à jour la base (voir « Création de la base de données »).
+* `npm install` installe les paquets du frontend dans *frontend/node_modules/*, hors gestion de configuration.
+* `npm run build` vérifie les types TypeScript, puis construit le frontend dans *build/frontend/*.
+* `uvicorn` lance le [backend](backend.md), qui sert aussi le frontend construit : l'application est à l'adresse `http://<machine>:8000/`. Depuis une autre machine, le port 8000 doit être ouvert dans le pare-feu.
+
+Pendant le développement du frontend, `npm run dev` (dans *frontend/*) le sert sur le port 5173 avec rechargement à chaud et renvoie les appels `/api` vers le backend lancé sur le port 8000.
+
+### Tests
+
+```
+.venv/bin/python -m unittest discover -s tests/tools -v
+.venv/bin/python -m unittest discover -s tests/backend -v
+```
+
+Les tests des outils sont décrits plus bas, ceux du backend dans [backend](backend.md). Le frontend est vérifié par `npm run build` (voir [frontend](frontend.md)).
 
 ## Export en PDF
 
@@ -116,7 +157,8 @@ Le format *json* traduit le schéma Oracle dans le format de *datamodel/* :
 * `auto_increment` vaut `true` pour la clé primaire simple d'une table qui porte un déclencheur actif `<TABLE>_AUTO_INC` ;
 * `default` reprend une valeur par défaut numérique ou chaîne ; une expression (`SYSDATE`…) est signalée par un avertissement et n'est pas reprise ;
 * `indexes` reprend les index de la table, sauf celui de la clé primaire. Une contrainte d'unicité devient un index unique. Un index décroissant ou sur une expression est signalé et n'est pas repris ;
-* `references` vient des clés étrangères de la base ou, avec *--lang*, du fichier langue ; `values` vient des énumérations du fichier langue.
+* `references` vient des clés étrangères de la base ou, avec *--lang*, du fichier langue, qui ajoute `label`, la colonne qui nomme l'enregistrement visé (masque `FK`) ; `values` vient des énumérations du fichier langue ;
+* `format` vient, avec *--lang*, des masques `YESNO` (`yes_no`) et `DATETIME` (`datetime`) du fichier langue, pour une colonne entière.
 
 L'export n'écrit jamais dans *datamodel/* : les fichiers de *datamodel/* sont la référence du contrôleur local et peuvent s'écarter du schéma de RESASAT. Quand la base RESASAT évolue, la reprise se fait à la main :
 
@@ -163,14 +205,7 @@ La base est le fichier *build/db/local-controller.duckdb*. Seule la structure es
 
 ### Prérequis
 
-L'outil demande le module Python `duckdb`, installé dans un environnement virtuel à la racine du dépôt (répertoire *.venv/*, hors gestion de configuration) :
-
-```
-python3.11 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
-
-*requirements.txt* fixe la version de `duckdb` (2.0.0). L'installation demande un accès à PyPI.
+L'outil demande le module Python `duckdb` (version 2.0.0), installé dans l'environnement virtuel *.venv/* décrit dans « Environnement de développement ».
 
 ### Utilisation
 

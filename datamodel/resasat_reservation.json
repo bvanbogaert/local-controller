@@ -52,7 +52,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_reservation_end",
@@ -60,7 +61,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_reservation_emiter_fk",
@@ -71,7 +73,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_station",
-        "column": "resasat_station_id"
+        "column": "resasat_station_id",
+        "label": "resasat_station_name"
       }
     },
     {
@@ -83,7 +86,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_channel",
-        "column": "resasat_channel_id"
+        "column": "resasat_channel_id",
+        "label": "resasat_channel_name"
       }
     },
     {
@@ -95,7 +99,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_station",
-        "column": "resasat_station_id"
+        "column": "resasat_station_id",
+        "label": "resasat_station_name"
       }
     },
     {
@@ -129,7 +134,8 @@
       "auto_increment": false,
       "references": {
         "table": "users",
-        "column": "id"
+        "column": "id",
+        "label": "loginname"
       }
     },
     {
@@ -155,7 +161,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_reservation_day_id",
@@ -199,7 +206,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_trans_mode",
-        "column": "resasat_trans_mode_id"
+        "column": "resasat_trans_mode_id",
+        "label": "resasat_trans_mode_name"
       }
     },
     {
@@ -208,7 +216,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_reservation_is_special",
@@ -216,7 +225,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_reservation_contact",
@@ -249,7 +259,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_reservation_confirm_da",
@@ -257,7 +268,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_reservation_confirm_us",
@@ -268,7 +280,8 @@
       "auto_increment": false,
       "references": {
         "table": "users",
-        "column": "id"
+        "column": "id",
+        "label": "loginname"
       }
     },
     {
@@ -297,7 +310,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_reservation_problem",
@@ -329,7 +343,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     }
   ],
   "primary_key": [

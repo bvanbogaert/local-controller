@@ -75,7 +75,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_replicat",
-        "column": "resasat_replicat_id"
+        "column": "resasat_replicat_id",
+        "label": "resasat_replicat_name"
       }
     },
     {
@@ -96,7 +97,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_station_type_period",
@@ -112,7 +114,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_station_type_emode",

@@ -95,14 +95,15 @@ Champs d'une colonne :
 | `nullable` | oui | `true` si la colonne accepte NULL. Doit valoir `false` pour une colonne de la clé primaire |
 | `default` | non | Valeur par défaut : nombre, chaîne, ou `null` s'il n'y en a pas |
 | `auto_increment` | non | `true` si la colonne est alimentée par une séquence ; demande un type entier et exclut `default` |
-| `references` | non | Clé étrangère : table et colonne visées. Documentaire |
+| `format` | non | Présentation d'une valeur entière : `yes_no` (0 = non, 1 = oui) ou `datetime` (date Unix, en secondes). Documentaire |
+| `references` | non | Clé étrangère : `table` et `column` visées et, facultatif, `label`, la colonne qui nomme l'enregistrement visé. Documentaire |
 | `values` | non | Énumération : signification de chaque valeur. Documentaire |
 
 Champs d'un index : `name` (nom de l'index), `unique` (`true` ou `false`) et `columns` (liste des colonnes, dans l'ordre).
 
 Les noms de tables, de colonnes et d'index s'écrivent en minuscules, avec des lettres, des chiffres et `_`. Un nom d'index ne peut servir qu'une fois dans tout le modèle. Un champ inconnu est refusé, pour qu'une faute de frappe ne passe pas inaperçue.
 
-Les champs documentaires `references` et `values` ne sont pas appliqués à la base : aucune contrainte de clé étrangère ni de vérification n'est créée, comme dans RESASAT où ces règles sont portées par l'application.
+Les champs documentaires `format`, `references` et `values` ne sont pas appliqués à la base : aucune contrainte de clé étrangère ni de vérification n'est créée, comme dans RESASAT où ces règles sont portées par l'application. Ils servent à présenter les valeurs à l'utilisateur, par exemple dans l'[import de la configuration](configuration-import.md).
 
 ### Types
 
@@ -121,4 +122,4 @@ DuckDB accepte la largeur d'un `varchar` mais ne l'applique pas et ne la conserv
 
 DuckDB n'a pas de colonne auto-incrémentée : une colonne `auto_increment` reçoit pour valeur par défaut la valeur suivante d'une séquence. La séquence porte le nom qu'elle a dans RESASAT, celui de la colonne suivi de `_seq` (`resasat_r2s_id_seq`) ; si la colonne ne commence pas par le nom de sa table, le nom de la table est ajouté devant (`users_id_seq`).
 
-La séquence n'avance que lorsqu'une ligne est insérée sans identifiant. Un chargement de données qui fournit ses propres identifiants devra ensuite recaler la séquence.
+La séquence n'avance que lorsqu'une ligne est insérée sans identifiant. Un chargement de données qui fournit ses propres identifiants doit ensuite avancer la séquence : l'[import de la configuration](configuration-import.md) le fait après chaque ajout.

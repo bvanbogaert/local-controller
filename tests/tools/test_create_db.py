@@ -214,6 +214,16 @@ class ValidationTest(ToolTestCase):
         self.assert_invalid(table, "index idx_station_name : colonne station_nam inconnue",
                             "index idx_station_start : « unique »")
 
+    def test_format(self):
+        table = station()
+        table["columns"][2]["format"] = "datetime"
+        table["columns"][5]["format"] = "yes_no"
+        self.assertEqual(tool.validate_table(table, "station"), [])
+        table["columns"][1]["format"] = "yes_no"
+        table["columns"][2]["format"] = "date"
+        self.assert_invalid(table, "colonne station_name : « format » demande un type entier",
+                            "colonne station_start : « format » 'date' inconnu")
+
     def test_default_and_auto_increment(self):
         table = station()
         table["columns"][2]["default"] = "zéro"

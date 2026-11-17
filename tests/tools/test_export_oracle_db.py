@@ -463,9 +463,37 @@ class JsonTest(unittest.TestCase):
         self.assertEqual(table["comment"], "Slot — Canaux | satellite")
         self.assertEqual(table["columns"][0]["comment"], "Index — Identifiant sur deux lignes")
         self.assertEqual(table["columns"][0]["references"],
-                         {"table": "resasat_station", "column": "resasat_station_id"})
+                         {"table": "resasat_station", "column": "resasat_station_id",
+                          "label": "resasat_station_name"})
         self.assertEqual(table["columns"][1]["values"],
                          {"H": "Horizontale (X)", "V": "Verticale (Y)"})
+
+    def test_format_and_reference_label(self):
+        language = tool.Language(
+            labels={},
+            masks={"resasat_channel_id": ["DATETIME"],
+                   "resasat_channel_name": ["YESNO"],      # varchar : pas de format
+                   "resasat_channel_station_fk": ["FKORNULL", "resasat_station",
+                                                  "resasat_station_id", "RESASAT_STATION_NAME"],
+                   "resasat_channel_owner_fk": ["FK", "users", "ID",
+                                                "concat(vorname, nachname)"],
+                   "resasat_station_id": ["YESNO"]})
+        files = tool.render_json(self.schema, language)[0]
+        columns = {c["name"]: c for c in json.loads(files["resasat_channel.json"])["columns"]}
+        self.assertEqual(columns["resasat_channel_id"]["format"], "datetime")
+        self.assertNotIn("format", columns["resasat_channel_name"])
+        # Le nom de l'enregistrement lié complète la contrainte de la base
+        self.assertEqual(columns["resasat_channel_station_fk"]["references"],
+                         {"table": "resasat_station", "column": "resasat_station_id",
+                          "label": "resasat_station_name"})
+        # Une expression n'est pas un nom de colonne
+        self.assertEqual(columns["resasat_channel_owner_fk"]["references"],
+                         {"table": "users", "column": "id"})
+        station = json.loads(files["resasat_station.json"])
+        self.assertEqual(station["columns"][0]["format"], "yes_no")
+        self.assertEqual(create_db.validate_table(station, "resasat_station")[:1],
+                         ["colonne resasat_station_start : type 'DATE' inconnu "
+                          "(types acceptés : int, bigint, double, varchar)"])
 
     def test_files_are_read_by_create_db(self):
         # Seuls les types sans correspondance sont refusés par tools/create-db.py

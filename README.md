@@ -59,8 +59,11 @@ Provision pour options à venir, mais sans compromettre la livraison du prototyp
 
 ## Liens
 
+* [backend](README.d/backend.md), "Backend", décrit l'organisation du backend, ses routes et le stockage du fichier de configuration en attente.
 * [build](README.d/build.md), "Fabrication", décrit l'installation de l'environnement de développement et la procédure de fabrication.
+* [configuration-import](README.d/configuration-import.md), "Import de la configuration", décrit les règles de l'import de la configuration de RESASAT : fichier, tables, filtres, comparaison, sélection et application.
 * [database](README.d/database.md), "Base de données", décrit les tables de la base de données et le format du modèle de données (*datamodel/*) dont elle est créée.
+* [frontend](README.d/frontend.md), "Frontend", décrit l'interface du simulateur (cadre, menu, grille, écrans de l'import) et l'organisation de son code.
 * [glossary](README.d/glossary.md), "Glossaire", définit et clarifie les termes techniques.
 * [installation](README.d/installation.md), "Installation", décrit l'installation de l'environnement de production.
 * [interface-resasat-local-controllerv2](README.d/interface-resasat-local-controllerv2.md), "interface entre RESASAT et les contrôleurs locaux, version 2", spécifie l'interface entre RESASAT et l'application des contrôleurs locaux.

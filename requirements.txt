@@ -1,1 +1,5 @@
 duckdb==2.0.0
+fastapi==0.163.1
+httpx2==2.16.2
+python-multipart==0.0.34
+uvicorn==0.54.0

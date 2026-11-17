@@ -24,7 +24,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_log_user_fk",
@@ -35,7 +36,8 @@
       "auto_increment": false,
       "references": {
         "table": "users",
-        "column": "id"
+        "column": "id",
+        "label": "loginname"
       }
     },
     {
@@ -91,7 +93,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_log_confirm_user_fk",
@@ -102,7 +105,8 @@
       "auto_increment": false,
       "references": {
         "table": "users",
-        "column": "id"
+        "column": "id",
+        "label": "loginname"
       }
     },
     {

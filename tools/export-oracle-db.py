@@ -457,6 +457,8 @@ class Language:
 
     ENUM_KINDS = ("ENUM", "ENUMORNULL")
     FOREIGN_KEY_KINDS = ("FK", "FKORNULL", "FKNOLIST")
+    # Masques qui fixent la présentation d'une valeur : champ « format » du modèle de données
+    FORMATS = {"YESNO": "yes_no", "DATETIME": "datetime"}
 
     def __init__(self, labels, masks, unknown_constants=()):
         self.labels = {name.lower(): plain_label(text) for name, text in labels.items()}
@@ -507,6 +509,20 @@ class Language:
                 and isinstance(mask[1], str) and isinstance(mask[2], str)):
             return mask[1], mask[2]
         return None
+
+    def foreign_key_label(self, column):
+        """Colonne qui nomme l'enregistrement visé par une clé étrangère, None
+        si le masque ne la donne pas ou donne une expression."""
+        mask = self.masks.get(column.lower())
+        if (self.foreign_key(column) and len(mask) > 3 and isinstance(mask[3], str)
+                and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", mask[3])):
+            return mask[3].lower()
+        return None
+
+    def value_format(self, column):
+        """Présentation d'une colonne (« yes_no », « datetime »), None par défaut."""
+        mask = self.masks.get(column.lower())
+        return self.FORMATS.get(mask[0]) if mask and isinstance(mask[0], str) else None
 
 
 # --------------------------------------------------------------------------
@@ -886,15 +902,21 @@ def auto_increment_column(schema, table):
 
 
 def json_reference(schema, language, table, column):
-    """Clé étrangère d'une colonne : contrainte de la base, sinon fichier langue."""
+    """Clé étrangère d'une colonne : contrainte de la base, sinon fichier langue.
+    Le fichier langue ajoute « label », la colonne qui nomme l'enregistrement visé."""
+    reference = None
     for constraint in schema.constraints_of(table, "R"):
         target = schema.target_of(constraint)
         if constraint["columns"] == [column] and target and len(target["columns"]) == 1:
-            return {"table": label(target["table"]), "column": label(target["columns"][0])}
-    target = language.foreign_key(column) if language else None
-    if target:
-        return {"table": label(find_table(schema, target[0])), "column": target[1].lower()}
-    return None
+            reference = {"table": label(target["table"]), "column": label(target["columns"][0])}
+    declared = language.foreign_key(column) if language else None
+    if declared:
+        declared_table = label(find_table(schema, declared[0]))
+        if reference is None:
+            reference = {"table": declared_table, "column": declared[1].lower()}
+        if reference["table"] == declared_table and language.foreign_key_label(column):
+            reference["label"] = language.foreign_key_label(column)
+    return reference
 
 
 def json_indexes(schema, table, warnings):
@@ -946,6 +968,9 @@ def render_json_table(schema, table, language, warnings):
         item["nullable"] = column["nullable"]
         item["default"] = default
         item["auto_increment"] = name == auto_increment
+        # La présentation ne vaut que pour un entier : 0/1, ou date Unix
+        if language and language.value_format(name) and item["type"] in ("int", "bigint"):
+            item["format"] = language.value_format(name)
         reference = json_reference(schema, language, table, name)
         if reference:
             item["references"] = reference

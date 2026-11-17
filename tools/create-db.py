@@ -42,7 +42,9 @@ REBUILD_SUFFIX = "__new"
 TABLE_KEYS = {"name", "comment", "columns", "primary_key", "indexes"}
 COLUMN_KEYS = {"name", "comment", "type", "length", "nullable", "default", "auto_increment",
                # Champs documentaires, non appliqués à la base
-               "references", "values"}
+               "format", "references", "values"}
+# Présentation d'une valeur entière : 0/1 en non/oui, date Unix en date et heure
+FORMATS = ("yes_no", "datetime")
 INDEX_KEYS = {"name", "unique", "columns"}
 
 
@@ -97,6 +99,13 @@ def validate_column(column, position, names):
             errors.append("« length » (largeur, entier positif) est obligatoire pour un varchar")
     elif "length" in column:
         errors.append(f"« length » ne s'applique pas au type {kind}")
+
+    if "format" in column:
+        if column["format"] not in FORMATS:
+            errors.append(f"« format » {column['format']!r} inconnu "
+                          f"(valeurs acceptées : {', '.join(FORMATS)})")
+        elif kind in SQL_TYPES and kind not in INTEGER_TYPES:
+            errors.append("« format » demande un type entier (int ou bigint)")
 
     if not isinstance(column.get("nullable"), bool):
         errors.append("« nullable » (true ou false) est obligatoire")

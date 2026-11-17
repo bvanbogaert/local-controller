@@ -34,7 +34,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_channel_end",
@@ -42,7 +43,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_channel_permanent",
@@ -50,7 +52,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_channel_satelite_fk",
@@ -61,7 +64,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_satelite",
-        "column": "resasat_satelite_id"
+        "column": "resasat_satelite_id",
+        "label": "resasat_satelite_name"
       }
     },
     {
@@ -142,7 +146,8 @@
       "auto_increment": false,
       "references": {
         "table": "users",
-        "column": "id"
+        "column": "id",
+        "label": "loginname"
       }
     },
     {
@@ -160,7 +165,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_channel_replicat_fk",
@@ -171,7 +177,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_replicat",
-        "column": "resasat_replicat_id"
+        "column": "resasat_replicat_id",
+        "label": "resasat_replicat_name"
       }
     },
     {
@@ -199,7 +206,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_profile",
-        "column": "resasat_profile_id"
+        "column": "resasat_profile_id",
+        "label": "resasat_profile_name"
       }
     },
     {
@@ -208,7 +216,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_channel_history_id",
@@ -250,7 +259,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_channel_slot",

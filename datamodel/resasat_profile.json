@@ -34,7 +34,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_profile_end",
@@ -42,7 +43,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_profile_payload_bandwi",
@@ -165,7 +167,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_profile_rollofffactor",

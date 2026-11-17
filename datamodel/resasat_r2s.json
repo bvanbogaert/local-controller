@@ -27,7 +27,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_station",
-        "column": "resasat_station_id"
+        "column": "resasat_station_id",
+        "label": "resasat_station_name"
       }
     }
   ],

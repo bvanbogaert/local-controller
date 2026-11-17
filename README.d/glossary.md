@@ -24,6 +24,12 @@ EN: Equivalent Radiated Power
 
 Voir PAR
 
+## Jeton
+
+EN: Token
+
+Chaîne aléatoire que le backend remet au navigateur pour désigner l'import de configuration en attente. Voir [backend](backend.md).
+
 ## Modèle de données
 
 EN: Data model
@@ -48,6 +54,12 @@ $$
 
 Voir EIRP
 
+## Slot
+
+EN: Channel
+
+Créneau de fréquence d'un satellite que les stations réservent. Table `resasat_channel` ; RESASAT le présente aux utilisateurs sous le nom « Slot ».
+
 ## Séquence
 
 EN: Sequence
@@ -55,3 +67,9 @@ EN: Sequence
 Compteur de la base de données qui fournit des nombres entiers croissants, sans doublon.
 
 Voir Auto-incrément.
+
+## Table de liens
+
+EN: Link table
+
+Table dont chaque ligne relie deux enregistrements d'autres tables, sans autre contenu. Exemple : `resasat_st2c` relie un type de station à un slot qu'il supporte.

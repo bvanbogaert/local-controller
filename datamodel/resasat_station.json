@@ -37,7 +37,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_station_type",
-        "column": "resasat_station_type_id"
+        "column": "resasat_station_type_id",
+        "label": "resasat_station_type_name"
       }
     },
     {
@@ -46,7 +47,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_station_receiver",
@@ -54,7 +56,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_station_transmitter",
@@ -62,7 +65,8 @@
       "type": "int",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "yes_no"
     },
     {
       "name": "resasat_station_region_fk",
@@ -73,7 +77,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_region",
-        "column": "resasat_region_id"
+        "column": "resasat_region_id",
+        "label": "resasat_region_name"
       }
     },
     {
@@ -121,7 +126,8 @@
       "auto_increment": false,
       "references": {
         "table": "resasat_station",
-        "column": "resasat_station_id"
+        "column": "resasat_station_id",
+        "label": "resasat_station_name"
       }
     },
     {
@@ -214,7 +220,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_station_end",
@@ -222,7 +229,8 @@
       "type": "bigint",
       "nullable": true,
       "default": null,
-      "auto_increment": false
+      "auto_increment": false,
+      "format": "datetime"
     },
     {
       "name": "resasat_station_version",
