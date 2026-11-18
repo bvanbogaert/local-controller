@@ -5,7 +5,6 @@ Questions/Remarques:
 * Dans l'offre, il y a eu confusion entre la liste des stations complémentaires `others` et l'état des amendements `amendmentStates`.
 * Pour identifier les ressources (véhicule, centre, etc), on utilise l'identification numérique interne de RESASAT (`id`), mais toujours accompagnée du nom en clair pour l'affichage.  
 * Quelles sont les unités des `eirp`, `sourceEirp`, `destinationEirp` et `redLineUpLevel` ? Les colonnes sont des entiers sans unité dans le modèle de données.
-* Le corps de l'acquittement (`PUT …/acknowledgement`) et ses codes d'échec restent à définir. Il contient au moins la `version` acquittée.
 
 ## Principes
 
@@ -61,11 +60,43 @@ Questions/Remarques:
 1. RESASAT envoie la configuration (`PUT /transmissions/{id}`).  
 2. Le contrôleur répond immédiatement : `received` s'il a enregistré le message, ou une erreur s'il le refuse (données invalides, équipement inconnu).   
    Dans RESASAT, la réservation passe à « Transmise » ou « Refusé ».  
-3. Lorsque le contrôleur a pris en compte la configuration, il envoie un acquittement à RESASAT : `acknowledged` ou `failed` avec un code.   
+3. Pendant la prise en compte de la configuration, le contrôleur peut envoyer des acquittements `sent` décrivant la progression. Lorsqu'il a terminé, il envoie un acquittement `acknowledged`, ou `problem` avec la description de l'erreur.   
    La réservation passe à « Acquittée » ou « Problème ».  
 4. Sans réponse à l'étape 2, RESASAT réessaie avec une temporisation croissante. Sans acquittement dans un délai paramétrable, la réservation passe à « Problème ».  
 5. Une modification suit le même chemin avec une `version` supérieure.   
    Une annulation utilise `DELETE` et est acquittée de la même manière.
+
+## Exemples : acquittement
+
+Corps de `PUT /stations/{station}/transmissions/{id}/acknowledgement`, en cours de configuration :
+
+```json
+{
+  "version": 1,
+  "state": "sent",
+  "description": "Configuration du modem (2/3)"
+}
+```
+
+Configuration appliquée :
+
+```json
+{
+  "version": 1,
+  "state": "acknowledged",
+  "description": ""
+}
+```
+
+Configuration en échec :
+
+```json
+{
+  "version": 1,
+  "state": "problem",
+  "description": "IRD 1 : pas de réponse"
+}
+```
 
 ## Resynchronisation
 
@@ -369,6 +400,22 @@ Correspondance de `amendmentState` avec `resasat_amendment_state` :
 | `version` | `integer` | oui | Version actuelle de la transmission dans RESASAT |
 | `amendmentStates` | `array` de `AmendmentState` | oui | État actuel des amendements |
 
+### `Acknowledgement` : corps de `PUT …/transmissions/{id}/acknowledgement`
+
+| Champ | Type | Oblig. | Description |
+| ----- | ----- | ----- | ----- |
+| `version` | `integer` | oui | Version de la transmission acquittée |
+| `state` | `string` | oui | `"sent"`, `"problem"` ou `"acknowledged"`, voir ci-dessous |
+| `description` | `string` | oui | Chaîne vide pour `"acknowledged"` ; progression de la configuration pour `"sent"` ; description de l'erreur pour `"problem"` |
+
+`state` reprend un sous-ensemble des valeurs de `amendmentState` :
+
+| JSON | Valeur stockée | Signification |
+| ----- | ----- | ----- |
+| `"sent"` | 1 | Transmis : configuration en cours de prise en compte par le contrôleur |
+| `"problem"` | 2 | Problème : la configuration n'a pas pu être appliquée |
+| `"acknowledged"` | 3 | Acquitté : la configuration est appliquée |
+
 ### `TransmissionRef` : élément des listes de transmissions
 
 Éléments de la réponse de `GET /transmissions` et du champ `known` de la resynchronisation.
@@ -508,6 +555,16 @@ Colonnes de RESASAT non transmises :
 | `resasat_channel` | `description`, `start`, `end`, `permanent`, `operator_fk`, `user_fk`, `globecast_nam`, `replicat_fk`, `preference`, `bandwidth`, `is_special`, `history_id`, `validation`, `is_foreign`, `is_nodal`, `slot`, `transpondeur` |
 | `resasat_profile` | `description`, `start`, `end`, `payload_bandwi`, `history_id`, `validation`, `is_foreign` |
 | `resasat_station` | toutes sauf `id` et `name` |
+
+### Acquittement
+
+L'acquittement s'applique à l'amendement en vigueur (`resasat_amendment_deleted` = 0) de la réservation `{id}` pour la station `{station}`.
+
+| Table.colonne | Champ JSON | Conversion |
+| ----- | ----- | ----- |
+| `resasat_reservation.resasat_reservation_amendment` | `version` | |
+| `resasat_amendment.resasat_amendment_state` | `state` | Voir la correspondance de `state` |
+| — | `description` | Pas de colonne dans le modèle de données |
 
 ### État de la station
 
