@@ -1,5 +1,9 @@
 # TODO
 
+2026-11-18 HTTPS (pas HTTP)
+
+2026-11-18 Les clefs privé et publique
+
 2026-11-16 On peut retirer la table s2c de datamodel/ et DuckDB/. La compatibilité se fait avec les type de station/véhicule. 
 
 2026-11-16 Ajouter dans le glossaire la signification st2c s2s pg...
